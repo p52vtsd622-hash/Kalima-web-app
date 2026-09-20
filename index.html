@@ -11,6 +11,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Kalima">
 <title>Kalima – Arabic word lookup</title>
+<script src="config.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Instrument+Sans:wght@400;500;600&family=Noto+Nastaliq+Urdu:wght@400;600&display=swap" rel="stylesheet">
@@ -274,6 +275,20 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
     <summary>Settings</summary>
     <div class="setbody">
       <label class="check"><input id="optUrdu" type="checkbox" checked> Show Urdu translations</label>
+      <div id="accessPick" class="modes" hidden>
+        <button type="button" class="seg" data-access="shared" aria-pressed="true">Class passcode</button>
+        <button type="button" class="seg" data-access="own" aria-pressed="false">My own Gemini key</button>
+      </div>
+      <div id="sharedBlock" class="setbody" hidden>
+        <label for="pass">Class passcode</label>
+        <input id="pass" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Type the passcode you were given">
+        <div class="row">
+          <button id="savepass" class="btn ghost" type="button">Save</button>
+          <button id="clearpass" class="btn ghost" type="button">Remove passcode</button>
+          <span id="passstate" aria-live="polite"></span>
+        </div>
+      </div>
+      <div id="ownBlock" class="setbody">
       <ol>
         <li>Open <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> and sign in with your Google account.</li>
         <li>Choose Create API key and copy it.</li>
@@ -287,6 +302,7 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
         <button id="savekey" class="btn ghost" type="button">Save</button>
         <button id="clearkey" class="btn ghost" type="button">Remove key</button>
         <span id="keystate" aria-live="polite"></span>
+      </div>
       </div>
     </div>
   </details>
@@ -393,10 +409,17 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
   function readStore(k) { try { return localStorage.getItem(k) || ""; } catch (e) { return ""; } }
   function writeStore(k, v) { try { if (v) localStorage.setItem(k, v); else localStorage.removeItem(k); return true; } catch (e) { return false; } }
 
-  var prefs = Object.assign({ urdu: true }, getJSON(PREF_KEY, {}));
+  var PROXY = (typeof window.KALIMA_PROXY === "string" ? window.KALIMA_PROXY.trim().replace(/\/+$/, "") : "");
+  var PASS_STORE = "kalima_passcode_v1";
+  var prefs = Object.assign({ urdu: true, access: "shared" }, getJSON(PREF_KEY, {}));
+  var memPass = "";
+  function getPass() { return readStore(PASS_STORE) || memPass; }
+  function useShared() { return !!PROXY && prefs.access !== "own"; }
   var memKey = "", memModel = "";
   function getKey() { return readStore(KEY_STORE) || memKey; }
   function getModel() { return readStore(MODEL_STORE) || memModel || DEFAULT_MODEL; }
+  function hasAccess() { return useShared() ? !!getPass() : !!getKey(); }
+  function needAccessMsg() { return useShared() ? "Enter your class passcode first (see Settings above)." : "Add your Gemini key first (see Settings above)."; }
 
   var saved = (function () { var a = getJSON(SAVED_KEY, []); return Array.isArray(a) ? a : []; })();
   function persistSaved() { return setJSON(SAVED_KEY, saved); }
@@ -411,7 +434,29 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
   }
 
   /* ---------- Gemini ---------- */
+  async function callProxy(prompt, signal) {
+    var pass = getPass();
+    if (!pass) throw { code: "no_passcode" };
+    var res;
+    try {
+      res = await fetch(PROXY, {
+        method: "POST", signal: signal,
+        headers: { "Content-Type": "application/json", "X-Passcode": pass },
+        body: JSON.stringify({ prompt: prompt })
+      });
+    } catch (e) {
+      if (e && e.name === "AbortError") throw { code: "cancelled" };
+      throw { code: "network" };
+    }
+    var j = null;
+    try { j = await res.json(); } catch (e) {}
+    if (!res.ok) throw { code: "http_" + res.status, message: (j && j.error && j.error.message) || "" };
+    if (!j || !j.text) throw { code: "empty" };
+    return { text: j.text };
+  }
+
   async function callGemini(prompt, signal) {
+    if (useShared()) return callProxy(prompt, signal);
     var key = getKey();
     if (!key) throw { code: "no_key" };
     var url = "https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(getModel()) + ":generateContent";
@@ -457,8 +502,15 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
   }
   function errCopy(e) {
     var c = e && e.code, m = (e && e.message) || "";
-    if (c === "no_key") return "Add your Gemini key first (see Settings above).";
     if (c === "cancelled") return "Lookup stopped.";
+    if (useShared()) {
+      if (c === "no_passcode") return "Enter your class passcode first (see Settings above).";
+      if (c === "http_401") return "That passcode isn't right. Check it in Settings.";
+      if (c === "http_404") return "The class server wasn't found. Ask whoever gave you this app.";
+      if (c === "http_429") return "The shared free limit is used up for now. Try again in a few minutes.";
+      if (c === "http_500") return "The class server isn't set up correctly. Tell whoever runs it.";
+    }
+    if (c === "no_key") return "Add your Gemini key first (see Settings above).";
     if (c === "network") return "Couldn't reach Gemini. Check your internet connection and try again.";
     if (c === "http_400") return /api key/i.test(m) ? "Gemini says the key isn't valid. Open Settings and paste it again." : "Gemini rejected the request. " + m;
     if (c === "http_401" || c === "http_403") return "This key can't be used here. Open Settings, check it, or create a new one in AI Studio.";
@@ -627,7 +679,7 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
   /* ---------- running a lookup ---------- */
   async function guarded(fn) {
     if (busy) return;
-    if (!getKey()) { settingsEl.open = true; showError("Add your Gemini key first (see Settings above)."); return; }
+    if (!hasAccess()) { settingsEl.open = true; showError(needAccessMsg()); return; }
     busy = true; goBtn.disabled = true;
     emptyEl.hidden = true; resultEl.replaceChildren();
     ctl = new AbortController();
@@ -1186,11 +1238,33 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
   $("#impBtn").addEventListener("click", function () { $("#impFile").click(); });
   $("#impFile").addEventListener("change", function (e) { var f = e.target.files[0]; if (f) importBackup(f); e.target.value = ""; });
 
+  function applyAccessUI() {
+    $("#accessPick").hidden = !PROXY;
+    $("#sharedBlock").hidden = !useShared();
+    $("#ownBlock").hidden = useShared();
+    document.querySelectorAll(".seg[data-access]").forEach(function (b) {
+      b.setAttribute("aria-pressed", (b.dataset.access === (useShared() ? "shared" : "own")) ? "true" : "false");
+    });
+  }
   function refreshKeyState() {
     keyStateEl.textContent = getKey() ? "Key saved on this device." : "No key yet.";
+    $("#passstate").textContent = getPass() ? "Passcode saved on this device." : "No passcode yet.";
     modelEl.value = getModel();
-    if (!getKey()) settingsEl.open = true;
+    applyAccessUI();
+    if (!hasAccess()) settingsEl.open = true;
   }
+  document.querySelectorAll(".seg[data-access]").forEach(function (b) {
+    b.addEventListener("click", function () { prefs.access = b.dataset.access; setJSON(PREF_KEY, prefs); refreshKeyState(); });
+  });
+  $("#savepass").addEventListener("click", function () {
+    var p = $("#pass").value.trim();
+    if (p) { memPass = p; if (!writeStore(PASS_STORE, p)) $("#passstate").textContent = "Saved for this session only."; }
+    $("#pass").value = "";
+    refreshKeyState();
+    if (getPass() && readStore(PASS_STORE)) settingsEl.open = false;
+    setStatus(null);
+  });
+  $("#clearpass").addEventListener("click", function () { memPass = ""; writeStore(PASS_STORE, ""); $("#pass").value = ""; refreshKeyState(); });
   $("#savekey").addEventListener("click", function () {
     var k = keyEl.value.trim(), m = modelEl.value.trim() || DEFAULT_MODEL;
     if (k) memKey = k;
