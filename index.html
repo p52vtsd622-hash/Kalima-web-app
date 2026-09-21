@@ -10,16 +10,18 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Kalima">
+<script>try{var __p=JSON.parse(localStorage.getItem("kalima_prefs_v1")||"{}");if(__p.theme==="light"||__p.theme==="dark")document.documentElement.setAttribute("data-theme",__p.theme);}catch(e){}</script>
 <title>Kalima – Arabic word lookup</title>
 <script src="config.js"></script>
 <script src="search.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Instrument+Sans:wght@400;500;600&family=Noto+Nastaliq+Urdu:wght@400;600&family=Amiri+Quran&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Instrument+Sans:wght@400;500;600&family=Noto+Nastaliq+Urdu:wght@400;600&family=Vazirmatn:wght@400;500&family=Amiri+Quran&display=swap" rel="stylesheet">
 <style>
 :root {
-  --paper: #F3F5F8;
-  --surface: #FFFFFF;
+  --paper: #FFFFFF;
+  --surface: #F5F7FA;
+  --field: #FFFFFF;
   --ink: #16213A;
   --muted: #5A6479;
   --line: #D8DEE8;
@@ -36,6 +38,7 @@
   --sans: 'Instrument Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --arabic: 'Amiri', 'Traditional Arabic', 'Geeza Pro', 'Noto Naskh Arabic', 'Times New Roman', serif;
   --quran: 'Amiri Quran', 'Amiri', 'Traditional Arabic', 'Geeza Pro', 'Times New Roman', serif;
+  --farsi: 'Vazirmatn', 'Noto Naskh Arabic', 'Geeza Pro', 'Times New Roman', serif;
   --urdu: 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', 'Noto Naskh Arabic', 'Geeza Pro', 'Times New Roman', serif;
   box-sizing: border-box;
   padding-top: env(safe-area-inset-top, 0px);
@@ -43,14 +46,14 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --paper: #0F1524; --surface: #172036; --ink: #E8ECF5; --muted: #98A2B8;
+    --paper: #0F1524; --surface: #172036; --field: #172036; --ink: #E8ECF5; --muted: #98A2B8;
     --line: #2A3550; --soft-line: #222C45; --accent: #3A5BB0; --accent-fg: #FFFFFF;
     --tile: #3A5BB0; --tile-fg: #FFFFFF; --hl: #4A3C10; --err: #F08A80;
     --ok: #6FCF97; --okbg: #163526; --badbg: #3A1B19;
   }
 }
 :root[data-theme="dark"] {
-  --paper: #0F1524; --surface: #172036; --ink: #E8ECF5; --muted: #98A2B8;
+  --paper: #0F1524; --surface: #172036; --field: #172036; --ink: #E8ECF5; --muted: #98A2B8;
   --line: #2A3550; --soft-line: #222C45; --accent: #3A5BB0; --accent-fg: #FFFFFF;
   --tile: #3A5BB0; --tile-fg: #FFFFFF; --hl: #4A3C10; --err: #F08A80;
   --ok: #6FCF97; --okbg: #163526; --badbg: #3A1B19;
@@ -63,7 +66,10 @@ main { max-width: 760px; margin: 0 auto; padding: 24px 20px 84px; }
 h1, h2, h3, p { margin: 0; }
 button { font-family: inherit; }
 .ar { font-family: var(--arabic); }
-.ur { font-family: var(--urdu); font-size: 19px; line-height: 2.3; direction: rtl; }
+.tx { font-size: var(--fs, 18px); line-height: var(--lh, 1.8); }
+.tx[lang="ur"] { font-family: var(--urdu); --fs: 19px; --lh: 2.3; direction: rtl; }
+.tx[lang="fa"] { font-family: var(--farsi); --fs: 18px; --lh: 2; direction: rtl; }
+.tx[lang="tr"] { font-family: var(--sans); --fs: 17px; --lh: 1.5; direction: ltr; }
 .muted { color: var(--muted); }
 
 header { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
@@ -93,7 +99,7 @@ summary:focus-visible, input:focus-visible, button:focus-visible { outline: 3px 
 .seg[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
 
 .search { display: flex; gap: 10px; }
-.search input { flex: 1; min-width: 0; font-family: var(--arabic); font-size: 28px; line-height: 1.6; padding: 6px 16px; color: var(--ink); background: var(--surface); border: 1.5px solid var(--line); border-radius: 12px; }
+.search input { flex: 1; min-width: 0; font-family: var(--arabic); font-size: 28px; line-height: 1.6; padding: 6px 16px; color: var(--ink); background: var(--field); border: 1.5px solid var(--line); border-radius: 12px; }
 .search input.latin { font-family: var(--sans); font-size: 19px; line-height: 1.6; padding: 12px 16px; }
 .search input::placeholder { color: var(--muted); opacity: .7; }
 .btn { font-size: 16px; font-weight: 600; background: var(--accent); color: var(--accent-fg); border: 0; border-radius: 12px; padding: 0 22px; cursor: pointer; }
@@ -149,9 +155,15 @@ summary:focus-visible, input:focus-visible, button:focus-visible { outline: 3px 
 .bi .en { font-size: 17px; }
 .colhead { font-size: 14px; color: var(--muted); }
 .colhead.right { text-align: right; font-family: var(--arabic); font-size: 17px; }
-.urblock { display: flex; justify-content: space-between; align-items: baseline; gap: 14px; margin-top: 8px; }
-.urblock .tag { font-size: 14px; color: var(--muted); font-family: var(--urdu); white-space: nowrap; }
-.urblock .ur { text-align: right; }
+.trblock { display: flex; justify-content: space-between; align-items: baseline; gap: 14px; margin-top: 8px; }
+.trblock .tag { font-size: 14px; color: var(--muted); white-space: nowrap; }
+.trblock .tag[lang="ur"] { font-family: var(--urdu); }
+.trblock .tag[lang="fa"] { font-family: var(--farsi); }
+.trblock .tx { flex: 1; text-align: right; }
+.trblock .tx[lang="tr"] { text-align: left; }
+.tbanner { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; border: 1px dashed var(--line); border-radius: 12px; padding: 10px 14px; margin-bottom: 14px; color: var(--muted); font-size: 15px; }
+.setgroup { display: grid; gap: 6px; }
+.setlabel { font-size: 14px; color: var(--muted); }
 .pair { padding: 14px 0; border-top: 1px solid var(--soft-line); }
 .pair:first-of-type { border-top: 0; padding-top: 0; }
 .spk { margin-inline-start: 10px; }
@@ -186,7 +198,7 @@ td.hit { background: var(--hl); }
 .rel li:first-child { border-top: 0; }
 .rel .gl { display: flex; flex-direction: column; }
 .rel .gl .en { color: var(--muted); font-size: 15px; }
-.rel .gl .ur { font-size: 17px; line-height: 2; text-align: left; color: var(--muted); }
+.rel .gl .tx { font-size: calc(var(--fs) - 2px); text-align: left; color: var(--muted); }
 .rel .ar { font-size: 24px; line-height: 1.7; direction: rtl; }
 .none { color: var(--muted); }
 .note { border-top: 1px solid var(--line); padding-top: 20px; color: var(--muted); font-size: 15px; }
@@ -196,19 +208,19 @@ td.hit { background: var(--hl); }
 .cand .candmeta { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .cand .candmeta .translit { font-size: 16px; }
 .cand .gloss { font-size: 17px; }
-.cand .ur { font-size: 17px; line-height: 2; text-align: left; color: var(--muted); display: block; }
+.cand .tx { font-size: calc(var(--fs) - 2px); text-align: left; color: var(--muted); display: block; }
 .hint { color: var(--muted); font-size: 15px; margin: 4px 0 14px; }
 .revh { font-size: 20px; font-weight: 600; margin-bottom: 6px; }
 
 .savedtools { display: flex; gap: 10px; margin-bottom: 14px; }
-.savedtools input { flex: 1; font-size: 16px; padding: 10px 14px; color: var(--ink); background: var(--surface); border: 1.5px solid var(--line); border-radius: 10px; font-family: var(--sans); }
+.savedtools input { flex: 1; font-size: 16px; padding: 10px 14px; color: var(--ink); background: var(--field); border: 1.5px solid var(--line); border-radius: 10px; font-family: var(--sans); }
 .srow { border-top: 1px solid var(--soft-line); padding: 10px 0 4px; }
 .srow:first-child { border-top: 0; }
 .smain { display: flex; justify-content: space-between; align-items: center; gap: 16px; width: 100%; background: none; border: 0; color: inherit; text-align: left; cursor: pointer; padding: 4px 0; }
 .smain .sw { font-size: 34px; line-height: 1.5; direction: rtl; }
 .smain .sgl { display: grid; gap: 0; }
 .smain .sgl .translit { font-size: 16px; }
-.smain .sgl .ur { font-size: 16px; line-height: 2; text-align: left; color: var(--muted); }
+.smain .sgl .tx { font-size: calc(var(--fs) - 3px); text-align: left; color: var(--muted); }
 .backup { margin-top: 28px; border-top: 1px solid var(--line); padding-top: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
 .backup + p { margin-top: 10px; }
 
@@ -220,7 +232,7 @@ td.hit { background: var(--hl); }
 .fcard .fword.small { font-size: 44px; }
 .fcard .fhint { color: var(--muted); font-size: 15px; margin-top: 8px; display: block; }
 .fcard .fmean { display: block; font-size: 22px; margin-top: 10px; }
-.fcard .fur { display: block; font-size: 20px; line-height: 2.2; }
+.fcard .fx { display: block; }
 .fcard .fex { display: block; margin-top: 12px; font-size: 22px; line-height: 1.9; }
 .fcard .fexen { display: block; font-size: 15px; color: var(--muted); }
 .prow { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; align-items: center; }
@@ -276,7 +288,7 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
 <main>
   <header>
     <h1 class="ar" lang="ar">كَلِمَة</h1>
-    <p>Look up Arabic words in English and Urdu, save them, and practice them.</p>
+    <p>Look up Arabic words with English and the translation you choose. Save them and practice them.</p>
   </header>
 
   <nav class="tabs" aria-label="Sections">
@@ -288,7 +300,23 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
   <details id="settings" class="settings">
     <summary>Settings</summary>
     <div class="setbody">
-      <label class="check"><input id="optUrdu" type="checkbox" checked> Show Urdu translations</label>
+      <div class="setgroup">
+        <div class="setlabel">Translation shown with Arabic and English</div>
+        <div class="modes">
+          <button type="button" class="seg" data-lang="ur" aria-pressed="true">Urdu</button>
+          <button type="button" class="seg" data-lang="fa" aria-pressed="false">Farsi</button>
+          <button type="button" class="seg" data-lang="tr" aria-pressed="false">Turkish</button>
+          <button type="button" class="seg" data-lang="off" aria-pressed="false">Off</button>
+        </div>
+      </div>
+      <div class="setgroup">
+        <div class="setlabel">Appearance</div>
+        <div class="modes">
+          <button type="button" class="seg" data-theme="system" aria-pressed="true">System</button>
+          <button type="button" class="seg" data-theme="light" aria-pressed="false">Light</button>
+          <button type="button" class="seg" data-theme="dark" aria-pressed="false">Dark</button>
+        </div>
+      </div>
       <div id="accessPick" class="modes" hidden>
         <button type="button" class="seg" data-access="shared" aria-pressed="true">Class passcode</button>
         <button type="button" class="seg" data-access="own" aria-pressed="false">My own Gemini key</button>
@@ -324,7 +352,7 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
   <section id="view-lookup">
     <div class="modes">
       <button type="button" class="seg" data-mode="ar" aria-pressed="true">Arabic word</button>
-      <button type="button" class="seg" data-mode="rev" aria-pressed="false">English or Urdu → Arabic</button>
+      <button type="button" class="seg" data-mode="rev" aria-pressed="false">Find the Arabic for…</button>
     </div>
     <div class="search">
       <input id="q" type="text" dir="rtl" lang="ar" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="اكتب كلمة" aria-label="Word to look up">
@@ -333,7 +361,7 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
     <div id="chips" class="chips"></div>
     <div id="status" aria-live="polite"></div>
     <div id="result"></div>
-    <p id="empty" class="empty">Enter any noun, verb or adjective, with or without vowel marks. Verbs can be in any tense or person. To find the Arabic for an English or Urdu word, switch to "English or Urdu → Arabic".</p>
+    <p id="empty" class="empty">Enter any noun, verb or adjective, with or without vowel marks. Verbs can be in any tense or person. To find the Arabic for a word in English, Urdu, Farsi or Turkish, switch to "Find the Arabic for…".</p>
   </section>
 
   <section id="view-saved" hidden>
@@ -354,7 +382,7 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
 
   <div id="toast" role="status" aria-live="polite"></div>
 
-  <footer>Quran text: <a href="https://tanzil.net" target="_blank" rel="noopener">Tanzil Project (tanzil.net)</a>, Uthmani text v1.1, licensed CC BY 3.0. Nahj al-Balagha: Arabic text of the Alhassanain Network edition, compiled by ash-Sharif ar-Radi. Answers are generated by Google Gemini. Double-check important vowel marks, conjugations and translations with a dictionary or your teacher.</footer>
+  <footer><span id="ver">Version 6</span> · Quran text: <a href="https://tanzil.net" target="_blank" rel="noopener">Tanzil Project (tanzil.net)</a>, Uthmani text v1.1, licensed CC BY 3.0. Nahj al-Balagha: Arabic text of the Alhassanain Network edition, compiled by ash-Sharif ar-Radi. Answers are generated by Google Gemini. Double-check important vowel marks, conjugations and translations with a dictionary or your teacher.</footer>
 </main>
 
 <script>
@@ -380,7 +408,7 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
   var $ = function (s) { return document.querySelector(s); };
   var input = $("#q"), goBtn = $("#go"), statusEl = $("#status"), resultEl = $("#result"), emptyEl = $("#empty"),
       chipsEl = $("#chips"), settingsEl = $("#settings"), keyEl = $("#key"), modelEl = $("#model"),
-      keyStateEl = $("#keystate"), toastEl = $("#toast"), filterEl = $("#filter"), urduOpt = $("#optUrdu");
+      keyStateEl = $("#keystate"), toastEl = $("#toast"), filterEl = $("#filter");
 
   /* ---------- tiny helpers ---------- */
   function el(tag, props) {
@@ -405,7 +433,14 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
     return e;
   }
   function ar(text, cls) { return el("span", { "class": "ar" + (cls ? " " + cls : ""), lang: "ar", dir: "rtl", text: text || "" }); }
-  function ur(text, cls) { return el("span", { "class": "ur" + (cls ? " " + cls : ""), lang: "ur", dir: "rtl", text: text || "" }); }
+  var LANGS = {
+    ur: { name: "Urdu", native: "اردو", dir: "rtl", prompt: "Urdu written in Urdu script" },
+    fa: { name: "Persian (Farsi)", native: "فارسی", dir: "rtl", prompt: "Persian (Farsi) written in Persian script, in natural modern Iranian Persian" },
+    tr: { name: "Turkish", native: "Türkçe", dir: "ltr", prompt: "standard Turkish written in Latin letters" }
+  };
+  function curLang() { return LANGS[prefs.lang] || null; }
+  function tx(text, cls) { var L = curLang(); return el("span", { "class": "tx" + (cls ? " " + cls : ""), lang: prefs.lang, dir: L ? L.dir : "auto", text: text || "" }); }
+  function shortTx(t) { return String(t || "").split(/[،؛.;]/)[0].trim(); }
   function norm(s) { return String(s == null ? "" : s).replace(/[\u064B-\u065F\u0670\u0640]/g, "").toLowerCase(); }
   function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
   function cap(s) { return String(s || "").replace(/^./, function (c) { return c.toUpperCase(); }); }
@@ -425,7 +460,10 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
 
   var PROXY = (typeof window.KALIMA_PROXY === "string" ? window.KALIMA_PROXY.trim().replace(/\/+$/, "") : "");
   var PASS_STORE = "kalima_passcode_v1";
-  var prefs = Object.assign({ urdu: true, access: "shared" }, getJSON(PREF_KEY, {}));
+  var prefs = Object.assign({ access: "shared", theme: "system" }, getJSON(PREF_KEY, {}));
+  if (!prefs.lang) prefs.lang = (prefs.urdu === false) ? "off" : "ur";
+  if (["ur", "fa", "tr", "off"].indexOf(prefs.lang) < 0) prefs.lang = "ur";
+  if (["system", "light", "dark"].indexOf(prefs.theme) < 0) prefs.theme = "system";
   var memPass = "";
   function getPass() { return readStore(PASS_STORE) || memPass; }
   function useShared() { return !!PROXY && prefs.access !== "own"; }
@@ -435,7 +473,7 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
   function hasAccess() { return useShared() ? !!getPass() : !!getKey(); }
   function needAccessMsg() { return useShared() ? "Enter your class passcode first (see Settings above)." : "Add your Gemini key first (see Settings above)."; }
 
-  var saved = (function () { var a = getJSON(SAVED_KEY, []); return Array.isArray(a) ? a : []; })();
+  var saved = (function () { var a = getJSON(SAVED_KEY, []); if (!Array.isArray(a)) return []; a.forEach(function (s) { if (s && s.data) migrateData(s.data); }); return a; })();
   function persistSaved() { return setJSON(SAVED_KEY, saved); }
   function findSaved(id) { for (var i = 0; i < saved.length; i++) if (saved[i].id === id) return saved[i]; return null; }
   function updateSavedCount() { $("#savedCount").textContent = saved.length ? "(" + saved.length + ")" : ""; }
@@ -446,6 +484,64 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
     list.unshift(word);
     setJSON(RECENT_KEY, list.slice(0, 8));
   }
+
+  /* ---------- translations: one set per language, stored inside each word ---------- */
+  function migrateData(d) {
+    if (!d || typeof d !== "object") return d;
+    if (!d.trans) {
+      var m = d.meaning || {};
+      var legacy = !!(m.ur || d.rootGlossUr || (d.examples || []).some(function (e) { return e && e.ur; }) ||
+        (d.synonyms || []).some(function (e) { return e && e.ur; }) || (d.antonyms || []).some(function (e) { return e && e.ur; }));
+      if (legacy) {
+        d.trans = { ur: {
+          root: d.rootGlossUr || "", meaning: m.ur || "",
+          examples: (d.examples || []).map(function (e) { return (e && e.ur) || ""; }),
+          synonyms: (d.synonyms || []).map(function (e) { return (e && e.ur) || ""; }),
+          antonyms: (d.antonyms || []).map(function (e) { return (e && e.ur) || ""; })
+        } };
+      }
+    }
+    if (d.extras && Array.isArray(d.extras.rootWords)) {
+      d.extras.rootWords_ur = d.extras.rootWords.map(function (w) { var c = Object.assign({}, w); if (c.ur) c.tx = c.ur; delete c.ur; return c; });
+      delete d.extras.rootWords;
+    }
+    return d;
+  }
+  function absorbTrans(d, lang) {
+    if (!LANGS[lang] || !d || typeof d !== "object") return d;
+    var m = d.meaning || {};
+    var t = { root: d.rootGlossTx || "", meaning: m.tx || "", examples: [], synonyms: [], antonyms: [] };
+    (d.examples || []).forEach(function (e) { t.examples.push((e && e.tx) || ""); if (e) delete e.tx; });
+    (d.synonyms || []).forEach(function (e) { t.synonyms.push((e && e.tx) || ""); if (e) delete e.tx; });
+    (d.antonyms || []).forEach(function (e) { t.antonyms.push((e && e.tx) || ""); if (e) delete e.tx; });
+    delete d.rootGlossTx; delete m.tx;
+    d.trans = d.trans || {}; d.trans[lang] = t;
+    return d;
+  }
+  function setTrans(d, lang, r) {
+    function str(x) { return typeof x === "string" ? x : ""; }
+    function arr(a, n) { var out = []; for (var i = 0; i < n; i++) out.push(Array.isArray(a) && typeof a[i] === "string" ? a[i] : ""); return out; }
+    r = r || {};
+    d.trans = d.trans || {};
+    d.trans[lang] = { root: str(r.root), meaning: str(r.meaning),
+      examples: arr(r.examples, (d.examples || []).length), synonyms: arr(r.synonyms, (d.synonyms || []).length), antonyms: arr(r.antonyms, (d.antonyms || []).length) };
+  }
+  function T(d) { var l = prefs.lang; return (LANGS[l] && d && d.trans && d.trans[l]) || null; }
+  function trMeaning(d) { var t = T(d); return (t && t.meaning) || ""; }
+  function trRoot(d) { var t = T(d); return (t && t.root) || ""; }
+  function trList(d, key, i) { var t = T(d); return (t && t[key] && t[key][i]) || ""; }
+  function allMeanings(d) { var o = []; if (d && d.trans) Object.keys(d.trans).forEach(function (k) { if (d.trans[k] && d.trans[k].meaning) o.push(d.trans[k].meaning); }); return o; }
+
+  /* ---------- appearance ---------- */
+  var themeMedia = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+  function applyTheme() {
+    var root = document.documentElement;
+    if (prefs.theme === "light" || prefs.theme === "dark") root.setAttribute("data-theme", prefs.theme); else root.removeAttribute("data-theme");
+    var meta = document.querySelector('meta[name="theme-color"]');
+    var c = getComputedStyle(root).getPropertyValue("--paper").trim();
+    if (meta && c) meta.setAttribute("content", c);
+  }
+  if (themeMedia && themeMedia.addEventListener) themeMedia.addEventListener("change", applyTheme);
 
   /* ---------- Gemini ---------- */
   async function callProxy(prompt, signal) {
@@ -539,8 +635,9 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
 
   /* ---------- prompts ---------- */
   function buildLookupPrompt(word) {
+    var L = curLang();
     return [
-'You are an expert teacher of Modern Standard Arabic helping a learner whose languages are English and Urdu. Analyze this Arabic word: ' + word,
+'You are an expert teacher of Modern Standard Arabic helping a learner whose languages are English' + (L ? ' and ' + L.name : '') + '. Analyze this Arabic word: ' + word,
 '',
 'Reply with ONLY one JSON object and nothing else, in exactly this shape:',
 '{',
@@ -550,23 +647,23 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
 '  "grammarNote": "for nouns and adjectives: gender and plural, e.g. feminine · plural مَدَارِسُ. Otherwise null",',
 '  "root": ["ك","ت","ب"],',
 '  "rootGloss": "core idea of the root in English, 2-5 words",',
-'  "rootGlossUr": "the same idea in Urdu",',
+L ? '  "rootGlossTx": "the same idea in ' + L.name + '",' : null,
 '  "wazn": { "pattern": "the morphological pattern (وزن) of the word EXACTLY as typed, written with the root letters ف ع ل and vowel marks, e.g. فَاعِل, مَفْعَلَة, أَفْعَال, يَفْعُلُونَ, اِسْتَفْعَلَ", "note": "very short English label, e.g. active participle, noun of place, broken plural, form X past" },',
-'  "meaning": { "en": "clear English meaning", "ur": "clear, natural Urdu meaning written in Urdu script", "ar": "short, simple Arabic definition, fully vocalized" },',
-'  "examples": [ { "ar": "Arabic sentence", "en": "English translation", "ur": "Urdu translation in Urdu script" }, { "ar": "...", "en": "...", "ur": "..." } ],',
+'  "meaning": { "en": "clear English meaning", ' + (L ? '"tx": "clear, natural ' + L.name + ' meaning", ' : '') + '"ar": "short, simple Arabic definition, fully vocalized" },',
+'  "examples": [ { "ar": "Arabic sentence", "en": "English translation"' + (L ? ', "tx": "' + L.name + ' translation"' : '') + ' }, { "ar": "...", "en": "..."' + (L ? ', "tx": "..."' : '') + ' } ],',
 '  "forms": ["up to 25 related forms of this word, used to find it in the Quran and other texts. Give them WITHOUT attached prefixes (و ف ب ل ك س ال) or pronoun endings. For a verb: the masdar, participles and derived nouns (NOT the conjugations, which are listed separately). For a noun or adjective: singular, dual, plural and broken-plural forms and closely related forms of the same root and meaning. Fully vocalized"],',
 '  "verb": null,',
-'  "synonyms": [ { "ar": "...", "en": "English gloss", "ur": "Urdu gloss" } ],',
-'  "antonyms": [ { "ar": "...", "en": "English gloss", "ur": "Urdu gloss" } ],',
+'  "synonyms": [ { "ar": "...", "en": "English gloss"' + (L ? ', "tx": "' + L.name + ' gloss"' : '') + ' } ],',
+'  "antonyms": [ { "ar": "...", "en": "English gloss"' + (L ? ', "tx": "' + L.name + ' gloss"' : '') + ' } ],',
 '  "note": null',
 '}',
 '',
 'Rules:',
 '- Fully vocalize (tashkeel) ALL Arabic text you write: the word, definition, examples, synonyms, antonyms and conjugations.',
-'- All Urdu must be natural Urdu in Urdu script, not transliteration.',
-'- "root": the root letters as separate single characters, in order (3 letters, or 4 for a quadriliteral root). If the word has no root (particle, loanword), use [] and set rootGloss and rootGlossUr to null.',
+L ? '- All ' + L.name + ' text must be natural ' + L.prompt + ', not transliteration.' : null,
+'- "root": the root letters as separate single characters, in order (3 letters, or 4 for a quadriliteral root). If the word has no root (particle, loanword), use [] and set rootGloss' + (L ? ' and rootGlossTx' : '') + ' to null.',
 '- "wazn": ALWAYS give the wazn of the word as typed, for every kind of word (verbs in any tense or person, nouns, adjectives, participles, plurals, verbal nouns). Replace the root letters with ف ع ل (add a second ل for a 4th radical) and keep all other letters, prefixes, suffixes and vowel marks. Examples: كَتَبَ → فَعَلَ; يَكْتُبُونَ → يَفْعُلُونَ; كَاتِب → فَاعِل; مَكْتُوب → مَفْعُول; مَدْرَسَة → مَفْعَلَة; كُتُب → فُعُل; اِسْتِخْدَام → اِسْتِفْعَال. Only use null if the word truly has no pattern (a particle or loanword).',
-'- "examples": exactly 2 natural sentences that use the word, each with English and Urdu translations. If the word is a verb, use the same inflected form the user typed in the first sentence when natural.',
+'- "examples": exactly 2 natural sentences that use the word, each with an English' + (L ? ' and a ' + L.name : '') + ' translation. If the word is a verb, use the same inflected form the user typed in the first sentence when natural.',
 '- "synonyms": 3 to 5 items. "antonyms": 1 to 3 items, or [] if no real antonym exists.',
 '- If the word is ambiguous without vowels, choose the most common meaning and mention the alternatives briefly in "note" (English). Otherwise "note" is null.',
 '- If the input is not an Arabic word or is meaningless, reply only with {"error": "short reason in English"}.',
@@ -586,25 +683,42 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
 '  }',
 '  "inputMatch": index (0-13) into the conjugation list below and which tense column the typed word matches, or null if it is an imperative or does not match.',
 '  "conjugation": conjugate the DICTIONARY verb (active voice) with exactly 14 items in this order: ' + ORDER_TEXT + '. "past" is the past tense verb only (e.g. كَتَبُوا) and "present" is the indicative present verb only (e.g. يَكْتُبُونَ), without the pronoun. Take extra care with hollow, defective, doubled and hamzated verbs.'
-    ].join("\n");
+    ].filter(function (x) { return x !== null; }).join("\n");
   }
 
   function buildReversePrompt(text) {
+    var L = curLang();
     return [
-'A learner typed this English or Urdu word or phrase: ' + text,
+'A learner typed this word or phrase in English, Urdu, Persian (Farsi) or Turkish: ' + text,
 'Give the best Modern Standard Arabic equivalents.',
 'Reply with ONLY one JSON object in this shape:',
-'{"results":[{"ar":"fully vocalized Arabic word or short phrase","transliteration":"simple Latin transliteration","partOfSpeech":"verb | noun | adjective | ...","en":"short English meaning","ur":"short Urdu meaning in Urdu script"}]}',
+'{"results":[{"ar":"fully vocalized Arabic word or short phrase","transliteration":"simple Latin transliteration","partOfSpeech":"verb | noun | adjective | ...","en":"short English meaning"' + (L ? ',"tx":"short ' + L.name + ' meaning"' : '') + '}]}',
 'Give 3 to 5 results, most common and natural first. For verbs use the past tense he-form (the dictionary form). Fully vocalize all Arabic.',
 'If the input is not a real word or phrase, reply only with {"error":"short reason in English"}.'
     ].join("\n");
   }
 
   function buildRootPrompt(letters, word) {
+    var L = curLang();
     return [
 'Arabic root: ' + letters.join(" ") + '. The learner just looked up: ' + word,
 'List 8 to 12 common Modern Standard Arabic words made from this root, across verb forms, nouns, participles and plurals. Do not include the word they already looked up.',
-'Reply with ONLY one JSON object: {"words":[{"ar":"fully vocalized word","partOfSpeech":"verb | noun | adjective | ...","wazn":"pattern using ف ع ل","en":"short English meaning","ur":"short Urdu meaning in Urdu script"}]}'
+'Reply with ONLY one JSON object: {"words":[{"ar":"fully vocalized word","partOfSpeech":"verb | noun | adjective | ...","wazn":"pattern using ف ع ل","en":"short English meaning"' + (L ? ',"tx":"short ' + L.name + ' meaning"' : '') + '}]}'
+    ].join("\n");
+  }
+
+  function buildTransPrompt(d, lang) {
+    var L = LANGS[lang], m = d.meaning || {}, ex = d.examples || [], sy = d.synonyms || [], an = d.antonyms || [];
+    function nums(list, f) { return list.length ? list.map(function (x, i) { return (i + 1) + ". " + f(x); }).join("\n") : "(none)"; }
+    return [
+'Translate the following into ' + L.prompt + '. Arabic word: ' + d.word,
+'Reply with ONLY one JSON object: {"root":"...","meaning":"...","examples":["..."],"synonyms":["..."],"antonyms":["..."]}',
+'The lists must contain exactly ' + ex.length + ' examples, ' + sy.length + ' synonyms and ' + an.length + ' antonyms, in the same order. Natural translations, not transliteration.',
+'root (the core idea of the root): ' + (d.rootGloss || "(none)"),
+'meaning: ' + (m.en || ""),
+'examples (translate the English):\n' + nums(ex, function (x) { return (x && x.en) || ""; }),
+'synonyms (give the meaning of each Arabic word):\n' + nums(sy, function (x) { return ((x && x.ar) || "") + " = " + ((x && x.en) || ""); }),
+'antonyms (give the meaning of each Arabic word):\n' + nums(an, function (x) { return ((x && x.ar) || "") + " = " + ((x && x.en) || ""); })
     ].join("\n");
   }
 
@@ -671,13 +785,13 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
 
   function setMode(m) {
     mode = m;
-    document.querySelectorAll(".seg").forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.mode === m ? "true" : "false"); });
+    document.querySelectorAll(".seg[data-mode]").forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.mode === m ? "true" : "false"); });
     if (m === "ar") {
       input.dir = "rtl"; input.lang = "ar"; input.classList.remove("latin");
       input.placeholder = "اكتب كلمة"; chipsEl.hidden = false;
     } else {
       input.dir = "auto"; input.removeAttribute("lang"); input.classList.add("latin");
-      input.placeholder = "Type an English or Urdu word"; chipsEl.hidden = true;
+      input.placeholder = "Type a word in English, Urdu, Farsi or Turkish"; chipsEl.hidden = true;
     }
   }
 
@@ -716,7 +830,7 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
     showTab("lookup");
     var raw = input.value.trim().replace(/\s+/g, " ").slice(0, 80);
     if (!raw) { showError("Type a word first."); return; }
-    var hasAr = /[\u0600-\u06FF]/.test(raw), hasLatin = /[A-Za-z]/.test(raw);
+    var hasAr = /[\u0600-\u06FF]/.test(raw), hasLatin = /[A-Za-z\u00C0-\u024F]/.test(raw);
     if (mode === "ar" && !hasAr) {
       if (hasLatin) { setMode("rev"); }
       else { showError("Please type the word in Arabic letters."); return; }
@@ -729,6 +843,7 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
     var data = await askJson(buildLookupPrompt(word), signal);
     setStatus(null);
     if (!data.error && !data.word) data.word = word;
+    if (!data.error) { if (curLang()) absorbTrans(data, prefs.lang); migrateData(data); }
     renderResult(data);
     if (!data.error) { saveRecent(data.word); renderChips(); }
   }
@@ -736,9 +851,9 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
   async function doReverse(text, signal) {
     var data = await askJson(buildReversePrompt(text), signal);
     setStatus(null);
-    lastReverse = { d: data, q: text };
+    lastReverse = { d: data, q: text, lang: prefs.lang };
     currentData = null;
-    renderReverse(data, text);
+    renderReverse(data, text, prefs.lang);
   }
 
   function openWord(w) { setMode("ar"); input.value = w; run(); }
@@ -758,7 +873,7 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
     resultEl.append(rootBand(d));
     var more = rootMoreBlock(d);
     if (more) resultEl.append(more);
-    resultEl.append(wordHead(d), actionBar(d), meaningSec(d), examplesSec(d), textSections(d));
+    [wordHead(d), actionBar(d), transBanner(d), meaningSec(d), examplesSec(d), textSections(d)].filter(Boolean).forEach(function (n) { resultEl.append(n); });
     if (d.verb && typeof d.verb === "object") resultEl.append(verbSec(d));
     resultEl.append(relatedSec(d));
     if (d.note) resultEl.append(el("p", { "class": "note", text: String(d.note) }));
@@ -769,7 +884,7 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
     var info = el("div", null, el("h2", { text: "Root" }));
     if (letters.length) {
       if (d.rootGloss) info.append(el("p", { text: d.rootGloss }));
-      if (prefs.urdu && d.rootGlossUr) info.append(ur(d.rootGlossUr));
+      if (trRoot(d)) info.append(tx(trRoot(d)));
     } else info.append(el("p", { text: "No root: this looks like a particle or a loanword." }));
     var band = el("section", { "class": "rootband" }, info);
     if (letters.length) {
@@ -804,22 +919,22 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
   function rootMoreBlock(d) {
     var letters = Array.isArray(d.root) ? d.root.filter(Boolean) : [];
     if (!letters.length) return null;
-    return extraToggle(d, "rootWords", "Words from this root", "Hide words from this root",
+    return extraToggle(d, "rootWords_" + prefs.lang, "Words from this root", "Hide words from this root",
       async function () { var r = await askJson(buildRootPrompt(letters, d.word)); return Array.isArray(r.words) ? r.words : []; },
       function (out, words) {
         if (!words.length) { out.append(el("p", { "class": "muted", text: "No other common words found." })); return; }
-        words.forEach(function (w) { if (w && w.ar) out.append(candButton(w)); });
+        words.forEach(function (w) { if (w && w.ar) out.append(candButton(w, prefs.lang)); });
       });
   }
 
-  function candButton(w) {
+  function candButton(w, lang) {
     var meta = el("span", { "class": "candmeta" });
     if (w.transliteration) meta.append(el("span", { "class": "translit", text: w.transliteration }));
     if (w.partOfSpeech) meta.append(el("span", { "class": "pos", text: w.partOfSpeech }));
     if (w.wazn) meta.append(ar(w.wazn));
     var gl = el("span", { "class": "gloss", text: w.en || "" });
     var b = el("button", { "class": "cand", type: "button", onclick: function () { openWord(w.ar); } },
-      ar(w.ar, "candword"), meta, gl, (prefs.urdu && w.ur) ? ur(w.ur) : null);
+      ar(w.ar, "candword"), meta, gl, (lang === prefs.lang && curLang() && w.tx) ? tx(w.tx) : null);
     return b;
   }
 
@@ -867,9 +982,30 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
     return bar;
   }
 
-  function urBlock(text) {
-    if (!prefs.urdu || !text) return null;
-    return el("div", { "class": "urblock" }, el("span", { "class": "tag", lang: "ur", text: "اردو" }), ur(text));
+  function trBlock(text) {
+    var L = curLang();
+    if (!L || !text) return null;
+    return el("div", { "class": "trblock" }, el("span", { "class": "tag", lang: prefs.lang, text: L.native }), tx(text));
+  }
+
+  function transBanner(d) {
+    var L = curLang(), lang = prefs.lang;
+    if (!L || T(d)) return null;
+    var msg = el("span", { text: "No " + L.name + " translation saved for this word yet." });
+    var label = "Add " + L.name + " translation";
+    var btn = el("button", { "class": "btn ghost", type: "button", text: label });
+    btn.addEventListener("click", async function () {
+      btn.disabled = true; btn.textContent = "Translating…";
+      try {
+        var r = await askJson(buildTransPrompt(d, lang));
+        setTrans(d, lang, r);
+        if (findSaved(d.word)) persistSaved();
+        if (currentData === d) renderResult(d);
+      } catch (e) {
+        btn.disabled = false; btn.textContent = label; msg.textContent = errCopy(e);
+      }
+    });
+    return el("div", { "class": "tbanner" }, msg, btn);
   }
 
   function meaningSec(d) {
@@ -882,17 +1018,17 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
         el("div", { "class": "en", text: m.en || "" }),
         el("div", { "class": "arcol", lang: "ar", dir: "rtl", text: m.ar || "" })
       ),
-      urBlock(m.ur));
+      trBlock(trMeaning(d)));
   }
 
   function examplesSec(d) {
     var sec = el("section", { "class": "sec" }, el("h2", { text: "In a sentence" }));
-    (Array.isArray(d.examples) ? d.examples : []).forEach(function (x) {
+    (Array.isArray(d.examples) ? d.examples : []).forEach(function (x, i) {
       if (!x) return;
       var arcol = el("div", { "class": "arcol", lang: "ar", dir: "rtl" }, x.ar || "", el("span", { "class": "spk" }, speakBtn(x.ar, "Listen to sentence")));
       sec.append(el("div", { "class": "pair" },
         el("div", { "class": "bi" }, el("div", { "class": "en", text: x.en || "" }), arcol),
-        urBlock(x.ur)));
+        trBlock(trList(d, "examples", i))));
     });
     return sec;
   }
@@ -998,14 +1134,15 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
     }
   }
 
-  function relList(title, items, emptyText) {
+  function relList(title, items, emptyText, d, key) {
     var col = el("div", null, el("h2", { text: title }));
-    var list = (Array.isArray(items) ? items : []).filter(function (x) { return x && x.ar; });
+    var list = (Array.isArray(items) ? items : []).map(function (x, i) { return { x: x, i: i }; }).filter(function (o) { return o.x && o.x.ar; });
     if (!list.length) { col.append(el("p", { "class": "none", text: emptyText })); return col; }
     var ul = el("ul", { "class": "rel" });
-    list.forEach(function (x) {
+    list.forEach(function (o) {
+      var x = o.x, t = trList(d, key, o.i);
       ul.append(el("li", null,
-        el("span", { "class": "gl" }, el("span", { "class": "en", text: x.en || "" }), (prefs.urdu && x.ur) ? ur(x.ur) : null),
+        el("span", { "class": "gl" }, el("span", { "class": "en", text: x.en || "" }), t ? tx(t) : null),
         ar(x.ar)));
     });
     col.append(ul);
@@ -1013,19 +1150,19 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
   }
   function relatedSec(d) {
     return el("section", { "class": "sec two" },
-      relList("Synonyms", d.synonyms, "No close synonyms."),
-      relList("Antonyms", d.antonyms, "No clear antonym."));
+      relList("Synonyms", d.synonyms, "No close synonyms.", d, "synonyms"),
+      relList("Antonyms", d.antonyms, "No clear antonym.", d, "antonyms"));
   }
 
   /* ---------- rendering: English/Urdu -> Arabic ---------- */
-  function renderReverse(d, q) {
+  function renderReverse(d, q, lang) {
     resultEl.replaceChildren();
     if (d.error) { resultEl.append(el("p", { "class": "msg err", text: String(d.error) })); return; }
     var list = Array.isArray(d.results) ? d.results.filter(function (r) { return r && r.ar; }) : [];
     if (!list.length) { resultEl.append(el("p", { "class": "muted", text: "No Arabic matches found." })); return; }
     resultEl.append(el("h2", { "class": "revh", text: "Arabic for “" + q + "”" }),
       el("p", { "class": "hint", text: "Tap a word for the full breakdown." }));
-    list.forEach(function (r) { resultEl.append(candButton(r)); });
+    list.forEach(function (r) { resultEl.append(candButton(r, lang)); });
   }
 
 
@@ -1173,7 +1310,7 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
     var rows = saved.filter(function (s) {
       if (!q) return true;
       var d = s.data || {}, m = d.meaning || {};
-      return norm([s.id, d.transliteration, m.en, m.ur].join(" ")).indexOf(q) >= 0;
+      return norm([s.id, d.transliteration, m.en].concat(allMeanings(d)).join(" ")).indexOf(q) >= 0;
     });
     if (!rows.length) { box.append(el("p", { "class": "muted", text: "No saved words match that filter." })); return; }
     rows.forEach(function (s) {
@@ -1181,7 +1318,7 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
       var gl = el("span", { "class": "sgl" });
       if (d.transliteration) gl.append(el("span", { "class": "translit", text: d.transliteration + (d.partOfSpeech ? " · " + d.partOfSpeech : "") }));
       gl.append(el("span", { text: shortMeaning(d) }));
-      if (prefs.urdu && d.meaning && d.meaning.ur) gl.append(ur(String(d.meaning.ur).split(/[،؛.]/)[0]));
+      if (trMeaning(d)) gl.append(tx(shortTx(trMeaning(d))));
       var main = el("button", { "class": "smain", type: "button", onclick: function () { openSaved(s); } }, gl, ar(d.word || s.id, "sw"));
       var rm = el("button", { "class": "linkbtn", type: "button", text: "Remove" });
       var armed = false, t;
@@ -1214,12 +1351,13 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
     download("kalima-backup-" + today() + ".json", "application/json",
       JSON.stringify({ app: "kalima", version: 1, exported: new Date().toISOString(), words: saved }));
   }
+  function tm(d, l) { return (d.trans && d.trans[l] && d.trans[l].meaning) || ""; }
   function exportCsv() {
     if (!saved.length) { toast("Nothing to export yet."); return; }
-    var head = ["Arabic", "Transliteration", "Root", "Part of speech", "Wazn", "English", "Urdu", "Arabic definition", "Example (Arabic)", "Example (English)"];
+    var head = ["Arabic", "Transliteration", "Root", "Part of speech", "Wazn", "English", "Urdu", "Persian", "Turkish", "Arabic definition", "Example (Arabic)", "Example (English)"];
     var rows = saved.map(function (s) {
       var d = s.data || {}, m = d.meaning || {}, ex = (d.examples && d.examples[0]) || {};
-      return [d.word || s.id, d.transliteration, (d.root || []).join(" "), d.partOfSpeech, d.wazn && d.wazn.pattern, m.en, m.ur, m.ar, ex.ar, ex.en].map(csvCell).join(",");
+      return [d.word || s.id, d.transliteration, (d.root || []).join(" "), d.partOfSpeech, d.wazn && d.wazn.pattern, m.en, tm(d, "ur"), tm(d, "fa"), tm(d, "tr"), m.ar, ex.ar, ex.en].map(csvCell).join(",");
     });
     download("kalima-words-" + today() + ".csv", "text/csv;charset=utf-8", "\uFEFF" + [head.map(csvCell).join(",")].concat(rows).join("\r\n"));
   }
@@ -1231,7 +1369,7 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
       var added = 0;
       words.forEach(function (w) {
         if (w && w.id && w.data && typeof w.data === "object" && !findSaved(String(w.id))) {
-          saved.push({ id: String(w.id), added: w.added || Date.now(), box: w.box || 0, due: w.due || 0, data: w.data });
+          saved.push({ id: String(w.id), added: w.added || Date.now(), box: w.box || 0, due: w.due || 0, data: migrateData(w.data) });
           added++;
         }
       });
@@ -1304,7 +1442,7 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
         ar(d.word || s.id, "fword small"),
         d.transliteration ? el("span", { "class": "fhint", text: d.transliteration + (Array.isArray(d.root) && d.root.length ? " · root " + d.root.join(" ") : "") }) : null,
         el("span", { "class": "fmean", text: m.en || "" }),
-        (prefs.urdu && m.ur) ? ur(m.ur, "fur") : null,
+        trMeaning(d) ? tx(trMeaning(d), "fx") : null,
         ex ? ar(ex.ar, "fex") : null,
         ex ? el("span", { "class": "fexen", text: ex.en || "" }) : null);
     }
@@ -1344,7 +1482,7 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
     } else {
       prompt = el("div", { "class": "qprompt" },
         el("span", { "class": "qtext", text: shortMeaning(s.data) }),
-        (prefs.urdu && s.data.meaning && s.data.meaning.ur) ? el("div", null, ur(String(s.data.meaning.ur).split(/[،؛.]/)[0])) : null,
+        trMeaning(s.data) ? el("div", null, tx(shortTx(trMeaning(s.data)))) : null,
         el("p", { "class": "muted", text: "Which Arabic word is this?" }));
     }
     body.append(prompt);
@@ -1428,14 +1566,24 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
     memKey = ""; writeStore(KEY_STORE, ""); keyEl.value = ""; refreshKeyState();
   });
 
-  urduOpt.checked = !!prefs.urdu;
-  urduOpt.addEventListener("change", function () {
-    prefs.urdu = urduOpt.checked; setJSON(PREF_KEY, prefs);
+  function rerenderAll() {
     if (currentData && !$("#view-lookup").hidden) renderResult(currentData);
-    else if (lastReverse) renderReverse(lastReverse.d, lastReverse.q);
+    else if (lastReverse && !$("#view-lookup").hidden) renderReverse(lastReverse.d, lastReverse.q, lastReverse.lang);
     if (!$("#view-saved").hidden) renderSaved();
     if (!$("#view-practice").hidden) renderPractice();
+  }
+  function syncPickers() {
+    document.querySelectorAll(".seg[data-lang]").forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.lang === prefs.lang ? "true" : "false"); });
+    document.querySelectorAll(".seg[data-theme]").forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.theme === prefs.theme ? "true" : "false"); });
+  }
+  document.querySelectorAll(".seg[data-lang]").forEach(function (b) {
+    b.addEventListener("click", function () { prefs.lang = b.dataset.lang; setJSON(PREF_KEY, prefs); syncPickers(); rerenderAll(); });
   });
+  document.querySelectorAll(".seg[data-theme]").forEach(function (b) {
+    b.addEventListener("click", function () { prefs.theme = b.dataset.theme; setJSON(PREF_KEY, prefs); applyTheme(); syncPickers(); });
+  });
+  syncPickers();
+  applyTheme();
 
   renderChips();
   updateSavedCount();
@@ -1444,7 +1592,14 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
 
 if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
   window.addEventListener("load", function () {
-    try { navigator.serviceWorker.register("sw.js").catch(function () {}); } catch (e) {}
+    try {
+      var hadController = !!navigator.serviceWorker.controller, reloaded = false;
+      // When a newer version of the app takes over, reload once so the new version is what you see.
+      navigator.serviceWorker.addEventListener("controllerchange", function () {
+        if (hadController && !reloaded) { reloaded = true; location.reload(); }
+      });
+      navigator.serviceWorker.register("sw.js").then(function (reg) { reg.update(); }).catch(function () {});
+    } catch (e) {}
   });
 }
 </script>
