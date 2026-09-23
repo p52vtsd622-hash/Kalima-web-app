@@ -70,6 +70,7 @@ button { font-family: inherit; }
 .tx[lang="ur"] { font-family: var(--urdu); --fs: 19px; --lh: 2.3; direction: rtl; }
 .tx[lang="fa"] { font-family: var(--farsi); --fs: 18px; --lh: 2; direction: rtl; }
 .tx[lang="tr"] { font-family: var(--sans); --fs: 17px; --lh: 1.5; direction: ltr; }
+.tx[lang="ru"] { font-family: var(--sans); --fs: 17px; --lh: 1.5; direction: ltr; }
 .muted { color: var(--muted); }
 
 header { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
@@ -161,6 +162,7 @@ summary:focus-visible, input:focus-visible, button:focus-visible { outline: 3px 
 .trblock .tag[lang="fa"] { font-family: var(--farsi); }
 .trblock .tx { flex: 1; text-align: right; }
 .trblock .tx[lang="tr"] { text-align: left; }
+.trblock .tx[lang="ru"] { text-align: left; }
 .tbanner { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; border: 1px dashed var(--line); border-radius: 12px; padding: 10px 14px; margin-bottom: 14px; color: var(--muted); font-size: 15px; }
 .setgroup { display: grid; gap: 6px; }
 .setlabel { font-size: 14px; color: var(--muted); }
@@ -306,6 +308,7 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
           <button type="button" class="seg" data-lang="ur" aria-pressed="true">Urdu</button>
           <button type="button" class="seg" data-lang="fa" aria-pressed="false">Farsi</button>
           <button type="button" class="seg" data-lang="tr" aria-pressed="false">Turkish</button>
+          <button type="button" class="seg" data-lang="ru" aria-pressed="false">Russian</button>
           <button type="button" class="seg" data-lang="off" aria-pressed="false">Off</button>
         </div>
       </div>
@@ -361,7 +364,7 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
     <div id="chips" class="chips"></div>
     <div id="status" aria-live="polite"></div>
     <div id="result"></div>
-    <p id="empty" class="empty">Enter any noun, verb or adjective, with or without vowel marks. Verbs can be in any tense or person. To find the Arabic for a word in English, Urdu, Farsi or Turkish, switch to "Find the Arabic for…".</p>
+    <p id="empty" class="empty">Enter any noun, verb or adjective, with or without vowel marks. Verbs can be in any tense or person. To find the Arabic for a word in English, Urdu, Farsi, Turkish or Russian, switch to "Find the Arabic for…".</p>
   </section>
 
   <section id="view-saved" hidden>
@@ -436,7 +439,8 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
   var LANGS = {
     ur: { name: "Urdu", native: "اردو", dir: "rtl", prompt: "Urdu written in Urdu script" },
     fa: { name: "Persian (Farsi)", native: "فارسی", dir: "rtl", prompt: "Persian (Farsi) written in Persian script, in natural modern Iranian Persian" },
-    tr: { name: "Turkish", native: "Türkçe", dir: "ltr", prompt: "standard Turkish written in Latin letters" }
+    tr: { name: "Turkish", native: "Türkçe", dir: "ltr", prompt: "standard Turkish written in Latin letters" },
+    ru: { name: "Russian", native: "Русский", dir: "ltr", prompt: "standard Russian written in Cyrillic script" }
   };
   function curLang() { return LANGS[prefs.lang] || null; }
   function tx(text, cls) { var L = curLang(); return el("span", { "class": "tx" + (cls ? " " + cls : ""), lang: prefs.lang, dir: L ? L.dir : "auto", text: text || "" }); }
@@ -462,7 +466,7 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
   var PASS_STORE = "kalima_passcode_v1";
   var prefs = Object.assign({ access: "shared", theme: "system" }, getJSON(PREF_KEY, {}));
   if (!prefs.lang) prefs.lang = (prefs.urdu === false) ? "off" : "ur";
-  if (["ur", "fa", "tr", "off"].indexOf(prefs.lang) < 0) prefs.lang = "ur";
+  if (["ur", "fa", "tr", "ru", "off"].indexOf(prefs.lang) < 0) prefs.lang = "ur";
   if (["system", "light", "dark"].indexOf(prefs.theme) < 0) prefs.theme = "system";
   var memPass = "";
   function getPass() { return readStore(PASS_STORE) || memPass; }
@@ -689,7 +693,7 @@ L ? '- All ' + L.name + ' text must be natural ' + L.prompt + ', not translitera
   function buildReversePrompt(text) {
     var L = curLang();
     return [
-'A learner typed this word or phrase in English, Urdu, Persian (Farsi) or Turkish: ' + text,
+'A learner typed this word or phrase in English, Urdu, Persian (Farsi), Turkish or Russian: ' + text,
 'Give the best Modern Standard Arabic equivalents.',
 'Reply with ONLY one JSON object in this shape:',
 '{"results":[{"ar":"fully vocalized Arabic word or short phrase","transliteration":"simple Latin transliteration","partOfSpeech":"verb | noun | adjective | ...","en":"short English meaning"' + (L ? ',"tx":"short ' + L.name + ' meaning"' : '') + '}]}',
@@ -791,7 +795,7 @@ L ? '- All ' + L.name + ' text must be natural ' + L.prompt + ', not translitera
       input.placeholder = "اكتب كلمة"; chipsEl.hidden = false;
     } else {
       input.dir = "auto"; input.removeAttribute("lang"); input.classList.add("latin");
-      input.placeholder = "Type a word in English, Urdu, Farsi or Turkish"; chipsEl.hidden = true;
+      input.placeholder = "Type a word in English, Urdu, Farsi, Turkish or Russian"; chipsEl.hidden = true;
     }
   }
 
@@ -1354,10 +1358,10 @@ L ? '- All ' + L.name + ' text must be natural ' + L.prompt + ', not translitera
   function tm(d, l) { return (d.trans && d.trans[l] && d.trans[l].meaning) || ""; }
   function exportCsv() {
     if (!saved.length) { toast("Nothing to export yet."); return; }
-    var head = ["Arabic", "Transliteration", "Root", "Part of speech", "Wazn", "English", "Urdu", "Persian", "Turkish", "Arabic definition", "Example (Arabic)", "Example (English)"];
+    var head = ["Arabic", "Transliteration", "Root", "Part of speech", "Wazn", "English", "Urdu", "Persian", "Turkish", "Russian", "Arabic definition", "Example (Arabic)", "Example (English)"];
     var rows = saved.map(function (s) {
       var d = s.data || {}, m = d.meaning || {}, ex = (d.examples && d.examples[0]) || {};
-      return [d.word || s.id, d.transliteration, (d.root || []).join(" "), d.partOfSpeech, d.wazn && d.wazn.pattern, m.en, tm(d, "ur"), tm(d, "fa"), tm(d, "tr"), m.ar, ex.ar, ex.en].map(csvCell).join(",");
+      return [d.word || s.id, d.transliteration, (d.root || []).join(" "), d.partOfSpeech, d.wazn && d.wazn.pattern, m.en, tm(d, "ur"), tm(d, "fa"), tm(d, "tr"), tm(d, "ru"), m.ar, ex.ar, ex.en].map(csvCell).join(",");
     });
     download("kalima-words-" + today() + ".csv", "text/csv;charset=utf-8", "\uFEFF" + [head.map(csvCell).join(",")].concat(rows).join("\r\n"));
   }

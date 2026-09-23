@@ -1,5 +1,5 @@
 // Keeps the app's own files available offline. It never touches calls to Google's Gemini API or the class server.
-const CACHE = "kalima-v7";
+const CACHE = "kalima-v8";
 const FILES = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./config.js", "./search.js", "./quran-data.json", "./nahj-data.json"];
 
 self.addEventListener("install", (e) => {
