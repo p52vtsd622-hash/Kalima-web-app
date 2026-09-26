@@ -180,7 +180,7 @@ table { width: 100%; border-collapse: collapse; min-width: 440px; }
 table.wide { min-width: 720px; }
 table.conj { min-width: 0; table-layout: fixed; }
 .tha { display: block; font-size: 17px; line-height: 1.5; color: var(--ink); }
-table.conj th:first-child { width: 35%; }
+table.conj th:first-child { width: 44%; }
 th { text-align: left; font-size: 14px; font-weight: 500; color: var(--muted); padding: 10px 14px; border-bottom: 1px solid var(--line); }
 th.r { text-align: right; }
 td, tbody th { padding: 6px 14px; border-top: 1px solid var(--soft-line); vertical-align: middle; }
@@ -430,6 +430,10 @@ td.hit { background: var(--hl); }
       settingsEl = $("#view-settings"), keyEl = $("#key"), modelEl = $("#model"),
       keyStateEl = $("#keystate"), toastEl = $("#toast"), filterEl = $("#filter");
 
+  /* ---------- view state ---------- */
+  var busy = false, ctl = null, currentData = null, lastReverse = null;
+  var lookupMode = "deep";
+
   /* ---------- tiny helpers ---------- */
   function el(tag, props) {
     var e = document.createElement(tag);
@@ -497,6 +501,13 @@ td.hit { background: var(--hl); }
   var saved = (function () { var a = getJSON(SAVED_KEY, []); if (!Array.isArray(a)) return []; a.forEach(function (s) { if (s && s.data) migrateData(s.data); }); return a; })();
   function persistSaved() { return setJSON(SAVED_KEY, saved); }
   function findSaved(id) { for (var i = 0; i < saved.length; i++) if (saved[i].id === id) return saved[i]; return null; }
+
+  function loadRecent() { var r = getJSON(RECENT_KEY, []); return Array.isArray(r) ? r.slice(0, 8) : []; }
+  function saveRecent(word) {
+    var list = loadRecent().filter(function (w) { return w !== word; });
+    list.unshift(word);
+    setJSON(RECENT_KEY, list.slice(0, 8));
+  }
 
   function migrateData(d) {
     if (!d || typeof d !== "object") return d;
@@ -663,7 +674,7 @@ L ? '  "rootGlossTx": "the same idea in ' + L.name + '",' : null,
 '  "wazn": { "pattern": "the morphological pattern (وزن) of the word EXACTLY as typed, written with the root letters ف ع ل and vowel marks, e.g. فَاعِل, مَفْعَلَة, أَفْعَال, يَفْعُلُونَ, اِسْتَفْعَلَ", "note": "very short English label, e.g. active participle, noun of place, broken plural, form X past" },',
 '  "meaning": { "en": "clear English meaning", ' + (L ? '"tx": "clear, natural ' + L.name + ' meaning", ' : '') + '"ar": "short, simple Arabic definition, fully vocalized" },',
 '  "examples": [ { "ar": "Arabic sentence", "en": "English translation"' + (L ? ', "tx": "' + L.name + ' translation"' : '') + ' }, { "ar": "...", "en": "..."' + (L ? ', "tx": "..."' : '') + ' } ],',
-'  "forms": ' + (lookupMode === 'fast' ? '[]' : '["up to 25 related forms..."]') + ',',
+'  "forms": ' + (lookupMode === 'fast' ? '[]' : '["up to 25 related forms of this word. Give them WITHOUT attached prefixes (و ف ب ل ك س ال) or pronoun endings. For a verb: the masdar, participles and derived nouns. For a noun or adjective: singular, dual, plural and broken-plural forms and closely related forms of the same root and meaning. Fully vocalized"]') + ',',
 '  "verb": null,',
 '  "synonyms": ' + (lookupMode === 'fast' ? '[]' : '[ { "ar": "...", "en": "English gloss"' + (L ? ', "tx": "' + L.name + ' gloss"' : '') + ' } ]') + ',',
 '  "antonyms": ' + (lookupMode === 'fast' ? '[]' : '[ { "ar": "...", "en": "English gloss"' + (L ? ', "tx": "' + L.name + ' gloss"' : '') + ' } ]') + ',',
@@ -697,7 +708,7 @@ lookupMode === 'fast' ? '- FAST MODE: Set "forms", "synonyms", "antonyms" to [].
 '    "inputMatch": { "index": 2, "tense": "present" },',
 '    "conjugation": []',
 '  }',
-'- "conjugation": ALWAYS return an empty array [] here. The user will request conjugations separately.',
+'- "conjugation": ALWAYS return an empty array [] here to save tokens. The user will request conjugations separately.',
 '  "inputMatch": index (0-13) into the conjugation list (0 هُوَ ... 13 نَحْنُ) and which tense column the typed word matches, or null if it is an imperative or does not match.'
       );
     }
@@ -738,7 +749,7 @@ lookupMode === 'fast' ? '- FAST MODE: Set "forms", "synonyms", "antonyms" to [].
     var L = curLang();
     return [
 'Arabic root: ' + letters.join(" ") + '. The learner just looked up: ' + word,
-'List 8 to 12 common Modern Standard Arabic words made from this root. Do not include the word they already looked up.',
+'List 8 to 12 common Modern Standard Arabic words made from this root, across verb forms, nouns, participles and plurals. Do not include the word they already looked up.',
 'Reply with ONLY one JSON object: {"words":[{"ar":"fully vocalized word","partOfSpeech":"verb | noun | adjective | ...","wazn":"pattern using ف ع ل","en":"short English meaning"' + (L ? ',"tx":"short ' + L.name + ' meaning"' : '') + '}]}'
     ].join("\n");
   }
@@ -787,12 +798,10 @@ lookupMode === 'fast' ? '- FAST MODE: Set "forms", "synonyms", "antonyms" to [].
     return b;
   }
 
-  /* ---------- view state ---------- */
-  var busy = false, ctl = null, currentData = null, lastReverse = null;
-
   function setStatus(node) { statusEl.replaceChildren(); if (node) statusEl.append(node); }
   function showError(text) { setStatus(el("p", { "class": "msg err", text: text })); }
 
+  /* ---------- Custom Dock UI Handlers ---------- */
   window.showTab = function(name) {
     ["lookup", "saved", "practice", "settings"].forEach(function (n) { $("#view-" + n).hidden = (n !== name); });
     document.querySelectorAll(".dock-nav-item").forEach(function (b) {
@@ -823,7 +832,7 @@ lookupMode === 'fast' ? '- FAST MODE: Set "forms", "synonyms", "antonyms" to [].
     $("#dock-btn-lang").textContent = l === 'off' ? 'Off' : LANGS[l].native;
     $("#lang-drop").classList.remove("show");
     syncPickers();
-    rerenderAll();
+    if (currentData) renderResult(currentData);
   };
 
   window.clearUI = function() {
@@ -852,8 +861,9 @@ lookupMode === 'fast' ? '- FAST MODE: Set "forms", "synonyms", "antonyms" to [].
     }
   }
 
+  // Close menus when clicking outside
   window.addEventListener("click", function (e) {
-    if (!e.target.closest('button')) {
+    if (!e.target.closest('.dock-pill') && !e.target.closest('.dropdown')) {
       document.querySelectorAll('.dropdown').forEach(function (m) { m.classList.remove('show'); });
     }
   });
@@ -868,7 +878,7 @@ lookupMode === 'fast' ? '- FAST MODE: Set "forms", "synonyms", "antonyms" to [].
     setStatus(el("div", { "class": "loading" },
       el("span", { "class": "dot", "aria-hidden": "true" }),
       el("span", { text: "Working on it. This can take up to a minute." }),
-      el("button", { "class": "dock-pill", type: "button", text: "Stop", onclick: function () { if (ctl) ctl.abort(); } })
+      el("button", { "class": "btn ghost", type: "button", text: "Stop", onclick: function () { if (ctl) ctl.abort(); } })
     ));
     try { await fn(ctl.signal); }
     catch (e) {
@@ -889,12 +899,26 @@ lookupMode === 'fast' ? '- FAST MODE: Set "forms", "synonyms", "antonyms" to [].
     return guarded(function (signal) { return doArabic(raw.slice(0, 60), signal); });
   }
 
+  input.addEventListener("input", function() {
+    var raw = input.value.trim();
+    var hasLatin = /[A-Za-z\u00C0-\u024F]/.test(raw);
+    var hasAr = /[\u0600-\u06FF]/.test(raw);
+    if (hasLatin && !hasAr) {
+      input.dir = "auto";
+      input.classList.add("latin");
+    } else {
+      input.dir = "rtl";
+      input.classList.remove("latin");
+    }
+  });
+
   async function doArabic(word, signal) {
     var data = await askJson(buildLookupPrompt(word), signal);
     setStatus(null);
     if (!data.error && !data.word) data.word = word;
     if (!data.error) { if (curLang()) absorbTrans(data, prefs.lang); migrateData(data); }
     renderResult(data);
+    if (!data.error) saveRecent(data.word);
   }
 
   async function doReverse(text, signal) {
@@ -1001,13 +1025,9 @@ lookupMode === 'fast' ? '- FAST MODE: Set "forms", "synonyms", "antonyms" to [].
       if (w.note) wl.append(el("span", { "class": "gram", text: w.note }));
       meta.append(wl);
     }
-    var row = el("div", { "style": "display: flex; justify-content: space-between; align-items: center; width: 100%;" },
-      meta,
-      ar(d.word, "bigword")
-    );
-    var listen = el("button", { "class": "btn ghost", "style": "margin-top:16px;", type: "button", onclick: function () { speak(d.word); } });
+    var listen = el("button", { "class": "btn ghost", "style": "margin-top:12px;", type: "button", onclick: function () { speak(d.word); } });
     listen.innerHTML = SPEAKER_SVG + "<span>Listen</span>";
-    return el("section", { "class": "wordhead" }, row, listen);
+    return el("section", { "class": "wordhead" }, ar(d.word, "bigword"), meta, listen);
   }
 
   function toggleSave(d) {
@@ -1064,7 +1084,7 @@ lookupMode === 'fast' ? '- FAST MODE: Set "forms", "synonyms", "antonyms" to [].
     var sec = el("section", { "class": "sec" }, el("h2", { text: "In a sentence" }));
     (Array.isArray(d.examples) ? d.examples : []).forEach(function (x, i) {
       if (!x) return;
-      var arcol = el("div", { "class": "arcol", lang: "ar", dir: "rtl" }, x.ar || "", el("span", { "class": "spk" }, speakBtn(x.ar, "Listen")));
+      var arcol = el("div", { "class": "arcol", lang: "ar", dir: "rtl" }, x.ar || "", el("span", { "class": "spk" }, speakBtn(x.ar, "Listen to sentence")));
       sec.append(el("div", { "class": "pair" },
         el("div", { "class": "bi" }, el("div", { "class": "en", text: x.en || "" }), arcol),
         trBlock(trList(d, "examples", i))));
@@ -1136,8 +1156,8 @@ lookupMode === 'fast' ? '- FAST MODE: Set "forms", "synonyms", "antonyms" to [].
         if (hitPast || hitPres || hitSubj || hitJuss || hitImp || hitPPast || hitPPres) hitFound = true;
         tbody.append(el("tr", { "class": (i === 6 || i === 12) ? "grp" : "" },
           el("th", { scope: "row" }, ar(p[0]), p[1]), 
-          cell(c.past, hitPast), cell(c.present, hitPres), 
-          cell(c.subjunctive, hitSubj), cell(c.jussive, hitJuss), cell(c.imperative, hitImp), 
+          cell(c.past, hitPast), cell(c.present, hitPres),
+          cell(c.subjunctive, hitSubj), cell(c.jussive, hitJuss), cell(c.imperative, hitImp),
           cell(c.passivePast, hitPPast), cell(c.passivePresent, hitPPres)
         ));
       });
@@ -1186,6 +1206,7 @@ lookupMode === 'fast' ? '- FAST MODE: Set "forms", "synonyms", "antonyms" to [].
       el("p", { "class": "hint", text: "Tap a word for the full breakdown." }));
     list.forEach(function (r) { resultEl.append(candButton(r, lang)); });
   }
+
 
   /* ---------- Quran and Nahj al-Balagha ---------- */
   var KS = window.KalimaSearch;
