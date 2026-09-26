@@ -1,387 +1,1621 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<!doctype html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>كَلِمَة - Kalima Arabic Morphology</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        brand: {
-                            amber: '#FFC107',
-                            dark: '#000000',
-                            surface: '#121212',
-                            variant: '#1A1A1A',
-                            line: '#333333',
-                            muted: '#A0A0A0'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#274690">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Kalima">
+<script>try{var __p=JSON.parse(localStorage.getItem("kalima_prefs_v1")||"{}");if(__p.theme==="light"||__p.theme==="dark")document.documentElement.setAttribute("data-theme",__p.theme);}catch(e){}</script>
+<title>Kalima – Arabic word lookup</title>
+<script src="config.js"></script>
+<script src="search.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Instrument+Sans:wght@400;500;600&family=Noto+Nastaliq+Urdu:wght@400;600&family=Vazirmatn:wght@400;500&family=Amiri+Quran&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #F3F5F8;
+  --surface: #FFFFFF;
+  --field: #FFFFFF;
+  --ink: #16213A;
+  --muted: #5A6479;
+  --line: #D8DEE8;
+  --soft-line: #E7EBF2;
+  --accent: #274690;
+  --accent-fg: #FFFFFF;
+  --tile: #274690;
+  --tile-fg: #FFFFFF;
+  --hl: #FFEDB8;
+  --err: #A8382F;
+  --ok: #1F7A4D;
+  --okbg: #E1F3E9;
+  --badbg: #FBE6E3;
+  --sans: 'Instrument Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --arabic: 'Amiri', 'Traditional Arabic', 'Geeza Pro', 'Noto Naskh Arabic', 'Times New Roman', serif;
+  --quran: 'Amiri Quran', 'Amiri', 'Traditional Arabic', 'Geeza Pro', 'Times New Roman', serif;
+  --farsi: 'Vazirmatn', 'Noto Naskh Arabic', 'Geeza Pro', 'Times New Roman', serif;
+  --urdu: 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', 'Noto Naskh Arabic', 'Geeza Pro', 'Times New Roman', serif;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #000000; --surface: #121212; --field: #1A1A1A; --ink: #FFFFFF; --muted: #A0A0A0;
+    --line: #333333; --soft-line: #222C45; --accent: #FFC107; --accent-fg: #000000;
+    --tile: #FFC107; --tile-fg: #000000; --hl: #332B10; --err: #F08A80;
+    --ok: #6FCF97; --okbg: #163526; --badbg: #3A1B19;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #000000; --surface: #121212; --field: #1A1A1A; --ink: #FFFFFF; --muted: #A0A0A0;
+  --line: #333333; --soft-line: #222C45; --accent: #FFC107; --accent-fg: #000000;
+  --tile: #FFC107; --tile-fg: #000000; --hl: #332B10; --err: #F08A80;
+  --ok: #6FCF97; --okbg: #163526; --badbg: #3A1B19;
+}
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); font-size: 16px; line-height: 1.55; -webkit-text-size-adjust: 100%; }
+main { max-width: 760px; margin: 0 auto; padding: 24px 20px 180px; }
+h1, h2, h3, p { margin: 0; }
+button { font-family: inherit; }
+.ar { font-family: var(--arabic); }
+.tx { font-size: var(--fs, 18px); line-height: var(--lh, 1.8); }
+.tx[lang="ur"] { font-family: var(--urdu); --fs: 19px; --lh: 2.3; direction: rtl; }
+.tx[lang="fa"] { font-family: var(--farsi); --fs: 18px; --lh: 2; direction: rtl; }
+.tx[lang="tr"] { font-family: var(--sans); --fs: 17px; --lh: 1.5; direction: ltr; }
+.tx[lang="ru"] { font-family: var(--sans); --fs: 17px; --lh: 1.5; direction: ltr; }
+.muted { color: var(--muted); }
+
+/* Android Dock UI Overrides */
+.bottom-dock { position: fixed; bottom: 0; left: 0; right: 0; background: var(--paper); border-top: 1px solid var(--line); z-index: 100; max-width: 760px; margin: 0 auto; padding: 12px 20px calc(12px + env(safe-area-inset-bottom, 0px)); }
+.dock-actions { display: flex; justify-content: space-between; margin-bottom: 12px; position: relative; gap: 8px; }
+.dock-pill { background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 999px; padding: 8px 20px; font-size: 14px; font-weight: 600; cursor: pointer; flex: 1; transition: 0.2s; }
+.dock-pill.active { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.dock-search { display: flex; align-items: center; background: var(--field); border: 1px solid var(--line); border-radius: 999px; padding: 6px; margin-bottom: 12px; }
+.dock-search input { flex: 1; border: 0; background: transparent; font-family: var(--arabic); font-size: 22px; padding: 4px 12px; color: var(--ink); text-align: right; outline: none; }
+.dock-search input.latin { font-family: var(--sans); font-size: 18px; text-align: left; direction: ltr; }
+.dock-search input::placeholder { color: var(--muted); }
+.dock-icon-btn { width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--accent); color: var(--accent-fg); cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.dock-nav { display: flex; justify-content: space-between; padding: 0 12px; }
+.dock-nav-item { width: 52px; height: 52px; border-radius: 14px; border: 0; background: transparent; color: var(--muted); font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+.dock-nav-item.active { background: var(--accent); color: var(--accent-fg); }
+.dropdown { display: none; position: absolute; bottom: 100%; margin-bottom: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 6px 0; min-width: 140px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
+.dropdown.show { display: block; }
+.dropdown button { display: block; width: 100%; text-align: left; padding: 12px 20px; background: transparent; border: 0; color: var(--ink); font-size: 15px; cursor: pointer; }
+.dropdown button:hover { background: var(--soft-line); }
+
+header h1 { font-family: var(--arabic); font-size: 40px; line-height: 1.3; font-weight: 700; color: var(--accent); margin-bottom: 24px; }
+#view-settings h2 { font-size: 28px; color: var(--accent); margin-bottom: 20px; }
+
+.settings { margin-bottom: 18px; border-radius: 12px; }
+.settings .setbody { padding-bottom: 16px; display: grid; gap: 14px; }
+.settings ol { margin: 0; padding-inline-start: 20px; color: var(--muted); font-size: 15px; }
+.settings a { color: var(--accent); }
+.settings label { font-size: 14px; color: var(--muted); margin-top: 4px; display: block; }
+.settings input[type="text"], .settings input[type="password"] { font-family: var(--sans); font-size: 16px; padding: 12px 14px; width: 100%; color: var(--ink); background: var(--surface); border: 1.5px solid var(--line); border-radius: 12px; }
+.settings .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+#keystate, #passstate { font-size: 14px; color: var(--muted); }
+input:focus-visible, button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+.modes { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+.seg { font-size: 14px; padding: 8px 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.seg[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+
+.btn { font-size: 16px; font-weight: 600; background: var(--accent); color: var(--accent-fg); border: 0; border-radius: 12px; padding: 0 22px; cursor: pointer; }
+.btn:disabled { opacity: .55; cursor: default; }
+.btn.ghost { background: transparent; color: var(--accent); border: 1.5px solid var(--line); padding: 8px 16px; font-size: 15px; font-weight: 500; }
+.btn.ghost svg { vertical-align: -4px; margin-inline-end: 6px; }
+.btn.ghost[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.btn.solid { padding: 12px 22px; }
+.linkbtn { background: none; border: 0; color: var(--muted); font-size: 14px; cursor: pointer; padding: 6px 0; text-decoration: underline; }
+.iconbtn { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid var(--line); background: var(--surface); color: var(--accent); cursor: pointer; vertical-align: middle; padding: 0; }
+
+#status { margin-top: 22px; }
+.loading { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; color: var(--muted); }
+.loading .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 0%,100% { opacity: .25; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .loading .dot { animation: none; } }
+.msg { margin-top: 22px; }
+.msg.err { color: var(--err); }
+
+#result { margin-top: 10px; }
+.sec { border-top: 1px solid var(--line); padding: 26px 0; }
+.sec h2 { font-size: 20px; font-weight: 600; margin-bottom: 14px; color: var(--accent); }
+.sec h3 { font-size: 16px; font-weight: 600; margin: 24px 0 10px; }
+
+.rootband { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 20px 24px; }
+.rootband h2 { font-size: 20px; font-weight: 600; }
+.rootband p { color: var(--muted); font-size: 15px; margin-top: 2px; }
+.tiles { position: relative; display: flex; gap: 14px; }
+.tiles::before { content: ''; position: absolute; left: 20px; right: 20px; top: 50%; height: 2px; background: var(--line); z-index: 0; }
+.tile { position: relative; z-index: 1; width: 68px; height: 80px; display: flex; align-items: center; justify-content: center; font-family: var(--arabic); font-size: 52px; line-height: 1; background: var(--tile); color: var(--tile-fg); border-radius: 16px; padding-bottom: 6px; }
+.extra { margin-top: 12px; }
+.extraout { margin-top: 10px; }
+
+.wordhead { display: grid; grid-template-columns: 1fr auto; grid-template-areas: "meta word"; align-items: center; gap: 12px 20px; padding: 26px 0 14px; }
+.bigword { grid-area: word; font-size: 68px; line-height: 1.5; text-align: right; }
+.wmeta { grid-area: meta; display: grid; gap: 6px; }
+.translit { font-size: 20px; font-style: italic; }
+.pos { display: inline-block; font-size: 14px; font-weight: 500; color: var(--accent); border: 1.5px solid currentColor; border-radius: 999px; padding: 2px 12px; }
+.gram { margin-inline-start: 10px; color: var(--muted); font-size: 15px; }
+.wazn { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.wazn .k { font-size: 14px; color: var(--muted); }
+.wazn .wpat { font-size: 28px; line-height: 1.6; color: var(--ink); font-weight: 700; }
+.wazn .gram { margin-inline-start: 0; }
+.actions { display: flex; gap: 10px; flex-wrap: wrap; padding-bottom: 22px; }
+
+.bi { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 32px; }
+.bi .arcol { text-align: right; direction: rtl; font-family: var(--arabic); font-size: 24px; line-height: 1.9; }
+.bi .en { font-size: 17px; }
+.colhead { font-size: 14px; color: var(--muted); }
+.colhead.right { text-align: right; font-family: var(--arabic); font-size: 17px; }
+.trblock { display: flex; justify-content: space-between; align-items: baseline; gap: 14px; margin-top: 8px; }
+.trblock .tag { font-size: 14px; color: var(--muted); white-space: nowrap; }
+.trblock .tag[lang="ur"] { font-family: var(--urdu); }
+.trblock .tag[lang="fa"] { font-family: var(--farsi); }
+.trblock .tx { flex: 1; text-align: right; }
+.trblock .tx[lang="tr"] { text-align: left; }
+.trblock .tx[lang="ru"] { text-align: left; }
+.tbanner { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; border: 1px dashed var(--line); border-radius: 12px; padding: 10px 14px; margin-bottom: 14px; color: var(--muted); font-size: 15px; }
+.setgroup { display: grid; gap: 6px; }
+.setlabel { font-size: 14px; color: var(--muted); }
+.pair { padding: 14px 0; border-top: 1px solid var(--soft-line); }
+.pair:first-of-type { border-top: 0; padding-top: 0; }
+.spk { margin-inline-start: 10px; }
+
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 16px 24px; margin-bottom: 8px; }
+.fact .k { font-size: 14px; color: var(--muted); }
+.fact .v { font-size: 17px; font-weight: 500; }
+.fact .v .ar { font-size: 24px; font-weight: 400; display: block; line-height: 1.7; }
+.fact .v .sub { display: block; font-size: 14px; font-weight: 400; color: var(--muted); }
+
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+table { width: 100%; border-collapse: collapse; min-width: 440px; }
+table.wide { min-width: 720px; }
+table.conj { min-width: 0; table-layout: fixed; }
+.tha { display: block; font-size: 17px; line-height: 1.5; color: var(--ink); }
+table.conj th:first-child { width: 35%; }
+th { text-align: left; font-size: 14px; font-weight: 500; color: var(--muted); padding: 10px 14px; border-bottom: 1px solid var(--line); }
+th.r { text-align: right; }
+td, tbody th { padding: 6px 14px; border-top: 1px solid var(--soft-line); vertical-align: middle; }
+tbody tr:first-child td, tbody tr:first-child th { border-top: 0; }
+tbody tr.grp td, tbody tr.grp th { border-top: 2px solid var(--line); }
+tbody th { text-align: left; font-weight: 400; color: var(--ink); font-size: 14px; }
+tbody th .ar { font-size: 22px; display: block; line-height: 1.6; color: var(--ink); }
+td.c { text-align: right; direction: rtl; font-family: var(--arabic); font-size: 24px; line-height: 1.8; cursor: pointer; }
+td.hit { background: var(--hl); }
+.legend { font-size: 14px; color: var(--muted); margin-top: 10px; }
+
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 24px 40px; }
+.two h2 { margin-bottom: 8px; }
+.rel { list-style: none; margin: 0; padding: 0; }
+.rel li { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding: 6px 0; border-top: 1px solid var(--soft-line); }
+.rel li:first-child { border-top: 0; }
+.rel .gl { display: flex; flex-direction: column; }
+.rel .gl .en { color: var(--muted); font-size: 15px; }
+.rel .gl .tx { font-size: calc(var(--fs) - 2px); text-align: left; color: var(--muted); }
+.rel .ar { font-size: 24px; line-height: 1.7; direction: rtl; }
+.none { color: var(--muted); }
+.note { border-top: 1px solid var(--line); padding-top: 20px; color: var(--muted); font-size: 15px; }
+
+.cand { display: grid; grid-template-columns: 1fr auto; gap: 2px 16px; width: 100%; text-align: left; color: inherit; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; margin-bottom: 10px; cursor: pointer; align-items: center; }
+.cand .candword { grid-column: 2; grid-row: 1 / 4; font-size: 34px; line-height: 1.5; text-align: right; }
+.cand .candmeta { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.cand .candmeta .translit { font-size: 16px; }
+.cand .gloss { font-size: 17px; }
+.cand .tx { font-size: calc(var(--fs) - 2px); text-align: left; color: var(--muted); display: block; }
+.hint { color: var(--muted); font-size: 15px; margin: 4px 0 14px; }
+.revh { font-size: 20px; font-weight: 600; margin-bottom: 6px; }
+
+.savedtools { display: flex; gap: 10px; margin-bottom: 14px; }
+.savedtools input { flex: 1; font-size: 16px; padding: 10px 14px; color: var(--ink); background: var(--field); border: 1.5px solid var(--line); border-radius: 10px; font-family: var(--sans); }
+.srow { border-top: 1px solid var(--soft-line); padding: 10px 0 4px; }
+.srow:first-child { border-top: 0; }
+.smain { display: flex; justify-content: space-between; align-items: center; gap: 16px; width: 100%; background: none; border: 0; color: inherit; text-align: left; cursor: pointer; padding: 4px 0; }
+.smain .sw { font-size: 34px; line-height: 1.5; direction: rtl; }
+.smain .sgl { display: grid; gap: 0; }
+.smain .sgl .translit { font-size: 16px; }
+.smain .sgl .tx { font-size: calc(var(--fs) - 3px); text-align: left; color: var(--muted); }
+.backup { margin-top: 28px; border-top: 1px solid var(--line); padding-top: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
+.backup + p { margin-top: 10px; }
+
+.pstats { color: var(--muted); margin-bottom: 12px; }
+.pmodes { display: flex; gap: 8px; margin-bottom: 18px; }
+.pprog { color: var(--muted); font-size: 14px; margin-bottom: 8px; }
+.fcard { display: block; width: 100%; min-height: 250px; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 26px 22px; color: inherit; cursor: pointer; text-align: center; }
+.fcard .fword { display: block; font-size: 76px; line-height: 1.6; }
+.fcard .fword.small { font-size: 44px; }
+.fcard .fhint { color: var(--muted); font-size: 15px; margin-top: 8px; display: block; }
+.fcard .fmean { display: block; font-size: 22px; margin-top: 10px; }
+.fcard .fx { display: block; }
+.fcard .fex { display: block; margin-top: 12px; font-size: 22px; line-height: 1.9; }
+.fcard .fexen { display: block; font-size: 15px; color: var(--muted); }
+.prow { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; align-items: center; }
+.prow .btn { flex: 1; min-width: 130px; padding: 14px; }
+.btn.again { background: var(--surface); color: var(--err); border: 1.5px solid var(--err); }
+.qprompt { text-align: center; padding: 14px 0 18px; }
+.qprompt .fword { font-size: 68px; line-height: 1.6; display: block; }
+.qprompt .qtext { font-size: 20px; }
+.opt { display: block; width: 100%; text-align: left; font-size: 18px; padding: 14px 16px; margin-bottom: 10px; background: var(--surface); color: var(--ink); border: 1.5px solid var(--line); border-radius: 12px; cursor: pointer; }
+.opt.arabic { font-family: var(--arabic); font-size: 28px; text-align: right; direction: rtl; }
+.opt.ok { border-color: var(--ok); background: var(--okbg); }
+.opt.bad { border-color: var(--err); background: var(--badbg); }
+.pdone { font-size: 20px; margin: 24px 0 14px; }
+
+.tcard { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); padding: 14px 16px; margin-bottom: 12px; }
+.tcard .quote { font-family: var(--quran); font-size: 26px; line-height: 2.3; direction: rtl; text-align: right; margin: 0; }
+.tcard.nahj .quote { font-family: var(--arabic); }
+.tcard mark { background: var(--hl); color: inherit; border-radius: 5px; padding: 0 3px; }
+.tcard .ref { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; flex-wrap: wrap; margin-top: 8px; font-size: 15px; }
+.tcard .ref .refen { font-weight: 600; }
+.tcard .ref .refar { font-size: 20px; color: var(--muted); }
+.tcard .more { margin-top: 6px; }
+.tsum { color: var(--muted); font-size: 15px; margin-bottom: 12px; }
+.credit { font-size: 13px; color: var(--muted); margin-top: 10px; }
+.credit a { color: var(--accent); }
+
+#toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(110px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--paper); padding: 10px 16px; border-radius: 10px; font-size: 15px; opacity: 0; pointer-events: none; transition: opacity .2s; max-width: 90%; z-index: 10; text-align: center; }
+#toast.show { opacity: 1; }
+
+@media (max-width: 560px) {
+  table.conj th { padding: 10px; }
+  table.conj tbody th { font-size: 13px; padding: 6px 10px; line-height: 1.3; }
+  table.conj tbody th .ar { font-size: 20px; }
+  table.conj td.c { font-size: 21px; padding: 6px 8px; }
+  header h1 { font-size: 34px; }
+  .btn { padding: 0 16px; }
+  .rootband { padding: 18px; }
+  .tile { width: 58px; height: 70px; font-size: 44px; }
+  .wordhead { grid-template-columns: 1fr; grid-template-areas: "word" "meta"; }
+  .bigword { text-align: left; font-size: 56px; }
+  .bi { grid-template-columns: 1fr; }
+  .bi .arcol { order: 2; }
+  .two { grid-template-columns: 1fr; }
+  .fcard .fword { font-size: 64px; }
+}
+</style>
 </head>
-<body class="bg-black text-white min-h-screen flex flex-col justify-between font-sans antialiased selection:bg-brand-amber selection:text-black">
+<body>
+<main>
+  <header>
+    <h1 class="ar" lang="ar">كَلِمَة</h1>
+  </header>
 
-    <!-- Main Content Container -->
-    <main id="app-content" class="flex-1 max-w-2xl w-full mx-auto p-4 pb-48 overflow-y-auto">
-        <!-- Dynamic Views Injected Here -->
-    </main>
+  <section id="view-lookup">
+    <div id="status" aria-live="polite"></div>
+    <div id="result"></div>
+    <div id="empty" style="margin-top: 24px;">
+      <div style="background: var(--surface); border: 1px solid var(--line); border-radius: 24px; padding: 36px 20px; text-align: center; cursor: pointer; transition: 0.2s;" onclick="document.getElementById('q').value='كِتَابَةٌ'; document.getElementById('go').click();">
+        <p style="color: var(--muted); font-size: 14px; margin-bottom: 12px; text-transform: uppercase;">كلمة مقترحة</p>
+        <h2 class="ar" style="font-size: 64px; font-weight: bold; margin-bottom: 16px; color: var(--ink);" dir="rtl">كِتَابَةٌ</h2>
+        <p style="color: var(--accent); font-size: 14px; font-weight: 600;">Tap to look up</p>
+      </div>
+      <p class="empty" style="text-align: center; margin-top: 24px;">Enter any noun, verb or adjective, with or without vowel marks. To find the Arabic for a word in English, Urdu, Farsi, Turkish or Russian, switch Language in the bottom menu.</p>
+    </div>
+  </section>
 
-    <!-- Bottom Fixed Control & Navigation Bar (Matches Android Mockup) -->
-    <footer class="fixed bottom-0 left-0 right-0 bg-black/95 backdrop-blur border-t border-brand-line z-50 max-w-2xl mx-auto">
-        <div class="p-3 space-y-3">
-            
-            <!-- Action Toggles Row: Save, Mode, Language -->
-            <div class="flex justify-between items-center text-sm">
-                <button id="btn-save" onclick="toggleSave()" class="bg-brand-variant text-brand-muted px-4 py-1.5 rounded-full font-semibold transition hover:text-white">Save</button>
-                
-                <!-- Mode Dropdown -->
-                <div class="relative">
-                    <button onclick="toggleDropdown('mode-menu')" id="mode-label" class="bg-brand-amber text-black px-4 py-1.5 rounded-full font-semibold flex items-center gap-1">Deep</button>
-                    <div id="mode-menu" class="hidden absolute bottom-full mb-2 right-0 bg-brand-surface border border-brand-line rounded-xl shadow-xl overflow-hidden w-32 py-1 z-50">
-                        <button onclick="setMode('deep')" class="w-full text-right px-4 py-2 hover:bg-brand-variant text-white">Deep</button>
-                        <button onclick="setMode('fast')" class="w-full text-right px-4 py-2 hover:bg-brand-variant text-white">Fast</button>
-                    </div>
-                </div>
+  <section id="view-saved" hidden>
+    <div class="savedtools"><input id="filter" type="search" placeholder="Filter saved words" aria-label="Filter saved words"></div>
+    <div id="savedList"></div>
+    <div class="backup">
+      <button id="expJson" class="btn ghost" type="button">Export backup</button>
+      <button id="expCsv" class="btn ghost" type="button">Export CSV</button>
+      <button id="impBtn" class="btn ghost" type="button">Import backup</button>
+      <input id="impFile" type="file" accept=".json,application/json" hidden>
+    </div>
+    <p class="hint">Saved words live only on this device. Export a backup now and then, and import it to restore or move to another device.</p>
+  </section>
 
-                <!-- Language Dropdown -->
-                <div class="relative">
-                    <button onclick="toggleDropdown('lang-menu')" id="lang-label" class="bg-brand-variant text-white px-4 py-1.5 rounded-full font-semibold">Off</button>
-                    <div id="lang-menu" class="hidden absolute bottom-full mb-2 right-0 bg-brand-surface border border-brand-line rounded-xl shadow-xl overflow-hidden w-36 py-1 z-50">
-                        <button onclick="setLang('off')" class="w-full text-right px-4 py-2 hover:bg-brand-variant text-white">Off</button>
-                        <button onclick="setLang('ur')" class="w-full text-right px-4 py-2 hover:bg-brand-variant text-white">Urdu</button>
-                        <button onclick="setLang('fa')" class="w-full text-right px-4 py-2 hover:bg-brand-variant text-white">Farsi</button>
-                        <button onclick="setLang('tr')" class="w-full text-right px-4 py-2 hover:bg-brand-variant text-white">Turkish</button>
-                        <button onclick="setLang('ru')" class="w-full text-right px-4 py-2 hover:bg-brand-variant text-white">Russian</button>
-                    </div>
-                </div>
-            </div>
+  <section id="view-practice" hidden>
+    <div id="practice"></div>
+  </section>
 
-            <!-- Search Bar Row -->
-            <div class="flex items-center bg-brand-variant rounded-full p-1.5 border border-brand-line">
-                <button onclick="clearSearch()" class="bg-brand-amber text-black w-10 h-10 rounded-full flex items-center justify-center font-bold shrink-0">⟳</button>
-                <input type="text" id="query-input" placeholder="اكتب كلمة أو ابحث..." class="flex-1 bg-transparent text-right px-4 text-lg focus:outline-none text-white placeholder-brand-muted" dir="rtl" onkeydown="if(event.key === 'Enter') handleLookup()">
-                <button onclick="handleLookup()" class="bg-brand-amber text-black w-10 h-10 rounded-full flex items-center justify-center font-bold shrink-0">➔</button>
-            </div>
-
-            <!-- Bottom Navigation Bar (ك, 💾, 🧠, ⚙️) -->
-            <div class="flex justify-between items-center px-4 pt-1">
-                <button onclick="switchTab('lookup')" id="nav-lookup" class="w-12 h-12 rounded-xl flex items-center justify-center text-xl font-bold bg-brand-amber text-black">ك</button>
-                <button onclick="switchTab('saved')" id="nav-saved" class="w-12 h-12 rounded-xl flex items-center justify-center text-xl font-bold text-brand-muted hover:text-white">💾</button>
-                <button onclick="switchTab('practice')" id="nav-practice" class="w-12 h-12 rounded-xl flex items-center justify-center text-xl font-bold text-brand-muted hover:text-white">🧠</button>
-                <button onclick="switchTab('settings')" id="nav-settings" class="w-12 h-12 rounded-xl flex items-center justify-center text-xl font-bold text-brand-muted hover:text-white">⚙️</button>
-            </div>
+  <section id="view-settings" class="settings" hidden>
+    <h2>Settings</h2>
+    <div class="setbody">
+      <div class="setgroup">
+        <div class="setlabel">Translation shown with Arabic and English</div>
+        <div class="modes">
+          <button type="button" class="seg" data-lang="ur" aria-pressed="true">Urdu</button>
+          <button type="button" class="seg" data-lang="fa" aria-pressed="false">Farsi</button>
+          <button type="button" class="seg" data-lang="tr" aria-pressed="false">Turkish</button>
+          <button type="button" class="seg" data-lang="ru" aria-pressed="false">Russian</button>
+          <button type="button" class="seg" data-lang="off" aria-pressed="false">Off</button>
         </div>
-    </footer>
+      </div>
+      <div class="setgroup">
+        <div class="setlabel">Appearance</div>
+        <div class="modes">
+          <button type="button" class="seg" data-theme="system" aria-pressed="true">System</button>
+          <button type="button" class="seg" data-theme="light" aria-pressed="false">Light</button>
+          <button type="button" class="seg" data-theme="dark" aria-pressed="false">Dark</button>
+        </div>
+      </div>
+      <div id="accessPick" class="modes" hidden>
+        <button type="button" class="seg" data-access="shared" aria-pressed="true">Class passcode</button>
+        <button type="button" class="seg" data-access="own" aria-pressed="false">My own Gemini key</button>
+      </div>
+      <div id="sharedBlock" class="setbody" hidden>
+        <label for="pass">Class passcode</label>
+        <input id="pass" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Type the passcode you were given">
+        <div class="row">
+          <button id="savepass" class="btn ghost" type="button">Save</button>
+          <button id="clearpass" class="btn ghost" type="button">Remove passcode</button>
+          <span id="passstate" aria-live="polite"></span>
+        </div>
+      </div>
+      <div id="ownBlock" class="setbody">
+      <ol>
+        <li>Open <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> and sign in with your Google account.</li>
+        <li>Choose Create API key and copy it.</li>
+        <li>Paste it below and tap Save. It stays on this device only.</li>
+      </ol>
+      <label for="key">Gemini API key</label>
+      <input id="key" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Paste your key">
+      <label for="model">Model</label>
+      <input id="model" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" value="gemini-3.5-flash-lite">
+      <div class="row">
+        <button id="savekey" class="btn ghost" type="button">Save</button>
+        <button id="clearkey" class="btn ghost" type="button">Remove key</button>
+        <span id="keystate" aria-live="polite"></span>
+      </div>
+      </div>
+    </div>
+  </section>
 
-    <!-- App Logic Script -->
-    <script>
-        var currentTab = 'lookup';
-        var lookupMode = 'deep';
-        var currentLang = 'off';
-        var currentResult = null;
-        var savedEntries = JSON.parse(localStorage.getItem('kalima_saved') || '[]');
-        var apiKey = localStorage.getItem('kalima_key') || '';
+  <div id="toast" role="status" aria-live="polite"></div>
+</main>
 
-        var pronouns = [
-            "هُوَ", "هُمَا (masc. dual)", "هُمْ", "هِيَ", "هُمَا (fem. dual)", "هُنَّ",
-            "أَنْتَ", "أَنْتُمَا (masc.)", "أَنْتُمْ", "أَنْتِ", "أَنْتُمَا (fem.)", "أَنْتُنَّ", "أَنَا", "نَحْنُ"
-        ];
-        var langNames = { ur: 'Urdu', fa: 'Farsi', tr: 'Turkish', ru: 'Russian', off: 'Off' };
+<footer class="bottom-dock">
+  <div class="dock-actions">
+      <button id="dock-btn-save" class="dock-pill" onclick="toggleSaveCurrent()">Save</button>
+      <div style="position:relative; flex:1;">
+          <button id="dock-btn-mode" class="dock-pill active" style="width:100%;" onclick="toggleMenu('mode-drop')">Deep</button>
+          <div id="mode-drop" class="dropdown" style="left:50%; transform:translateX(-50%); text-align:center;">
+              <button onclick="setLookupMode('deep')" style="text-align:center;">Deep</button>
+              <button onclick="setLookupMode('fast')" style="text-align:center;">Fast</button>
+          </div>
+      </div>
+      <div style="position:relative; flex:1;">
+          <button id="dock-btn-lang" class="dock-pill" style="width:100%;" onclick="toggleMenu('lang-drop')">Off</button>
+          <div id="lang-drop" class="dropdown" style="right:0;">
+              <button onclick="setGlobalLang('ur')">Urdu</button>
+              <button onclick="setGlobalLang('fa')">Farsi</button>
+              <button onclick="setGlobalLang('tr')">Turkish</button>
+              <button onclick="setGlobalLang('ru')">Russian</button>
+              <button onclick="setGlobalLang('off')">Off</button>
+          </div>
+      </div>
+  </div>
+  <div class="dock-search">
+      <button class="dock-icon-btn" style="background:var(--surface); color:var(--accent); border:1px solid var(--line);" onclick="document.getElementById('q').value=''; clearUI();">⟳</button>
+      <input id="q" type="text" dir="rtl" lang="ar" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="اكتب كلمة أو ابحث...">
+      <button id="go" class="dock-icon-btn">➔</button>
+  </div>
+  <div class="dock-nav">
+      <button class="dock-nav-item active" data-tab="lookup" onclick="showTab('lookup')">ك</button>
+      <button class="dock-nav-item" data-tab="saved" onclick="showTab('saved')">💾</button>
+      <button class="dock-nav-item" data-tab="practice" onclick="showTab('practice')">🧠</button>
+      <button class="dock-nav-item" data-tab="settings" onclick="showTab('settings')">⚙️</button>
+  </div>
+</footer>
 
-        function switchTab(tab) {
-            currentTab = tab;
-            var tabs = ['lookup', 'saved', 'practice', 'settings'];
-            for (var i = 0; i < tabs.length; i++) {
-                var t = tabs[i];
-                var btn = document.getElementById('nav-' + t);
-                if (t === tab) {
-                    btn.className = "w-12 h-12 rounded-xl flex items-center justify-center text-xl font-bold bg-brand-amber text-black";
-                } else {
-                    btn.className = "w-12 h-12 rounded-xl flex items-center justify-center text-xl font-bold text-brand-muted hover:text-white";
-                }
-            }
-            render();
+<script>
+(function () {
+  "use strict";
+
+  var PRONOUNS = [
+    ["هُوَ", "he · 3rd masc. singular"], ["هُمَا", "they two · 3rd masc. dual"], ["هُمْ", "they · 3rd masc. plural"],
+    ["هِيَ", "she · 3rd fem. singular"], ["هُمَا", "they two · 3rd fem. dual"], ["هُنَّ", "they · 3rd fem. plural"],
+    ["أَنْتَ", "you · 2nd masc. singular"], ["أَنْتُمَا", "you two · 2nd masc. dual"], ["أَنْتُمْ", "you · 2nd masc. plural"],
+    ["أَنْتِ", "you · 2nd fem. singular"], ["أَنْتُمَا", "you two · 2nd fem. dual"], ["أَنْتُنَّ", "you · 2nd fem. plural"],
+    ["أَنَا", "I · 1st singular"], ["نَحْنُ", "we · 1st plural"]
+  ];
+  var ORDER_TEXT = "0 هُوَ, 1 هُمَا (masc. dual), 2 هُمْ, 3 هِيَ, 4 هُمَا (fem. dual), 5 هُنَّ, 6 أَنْتَ, 7 أَنْتُمَا (masc.), 8 أَنْتُمْ, 9 أَنْتِ, 10 أَنْتُمَا (fem.), 11 أَنْتُنَّ, 12 أَنَا, 13 نَحْنُ";
+  var INTERVALS = [0, 1, 3, 7, 14, 30];
+  var SPEAKER_SVG = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
+
+  var KEY_STORE = "kalima_gemini_key_v1", MODEL_STORE = "kalima_gemini_model_v1";
+  var RECENT_KEY = "kalima_recent_v1", SAVED_KEY = "kalima_saved_v1", PREF_KEY = "kalima_prefs_v1";
+  var DEFAULT_MODEL = "gemini-3.5-flash-lite";
+
+  var $ = function (s) { return document.querySelector(s); };
+  var input = $("#q"), goBtn = $("#go"), statusEl = $("#status"), resultEl = $("#result"), emptyEl = $("#empty"),
+      settingsEl = $("#view-settings"), keyEl = $("#key"), modelEl = $("#model"),
+      keyStateEl = $("#keystate"), toastEl = $("#toast"), filterEl = $("#filter");
+
+  /* ---------- tiny helpers ---------- */
+  function el(tag, props) {
+    var e = document.createElement(tag);
+    if (props) {
+      Object.keys(props).forEach(function (k) {
+        var v = props[k];
+        if (k === "class") e.className = v;
+        else if (k === "text") e.textContent = v;
+        else if (k.indexOf("on") === 0) e.addEventListener(k.slice(2), v);
+        else e.setAttribute(k, v);
+      });
+    }
+    for (var i = 2; i < arguments.length; i++) {
+      var kids = [].concat(arguments[i]);
+      for (var j = 0; j < kids.length; j++) {
+        var kid = kids[j];
+        if (kid === null || kid === undefined || kid === false) continue;
+        e.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
+      }
+    }
+    return e;
+  }
+  function ar(text, cls) { return el("span", { "class": "ar" + (cls ? " " + cls : ""), lang: "ar", dir: "rtl", text: text || "" }); }
+  var LANGS = {
+    ur: { name: "Urdu", native: "اردو", dir: "rtl", prompt: "Urdu written in Urdu script" },
+    fa: { name: "Persian (Farsi)", native: "فارسی", dir: "rtl", prompt: "Persian (Farsi) written in Persian script, in natural modern Iranian Persian" },
+    tr: { name: "Turkish", native: "Türkçe", dir: "ltr", prompt: "standard Turkish written in Latin letters" },
+    ru: { name: "Russian", native: "Русский", dir: "ltr", prompt: "standard Russian written in Cyrillic script" }
+  };
+  function curLang() { return LANGS[prefs.lang] || null; }
+  function tx(text, cls) { var L = curLang(); return el("span", { "class": "tx" + (cls ? " " + cls : ""), lang: prefs.lang, dir: L ? L.dir : "auto", text: text || "" }); }
+  function shortTx(t) { return String(t || "").split(/[،؛.;]/)[0].trim(); }
+  function norm(s) { return String(s == null ? "" : s).replace(/[\u064B-\u065F\u0670\u0640]/g, "").toLowerCase(); }
+  function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+  function cap(s) { return String(s || "").replace(/^./, function (c) { return c.toUpperCase(); }); }
+
+  var toastTimer;
+  function toast(msg) {
+    toastEl.textContent = msg; toastEl.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.classList.remove("show"); }, 3400);
+  }
+
+  /* ---------- storage ---------- */
+  function getJSON(k, def) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch (e) { return def; } }
+  function setJSON(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
+  function readStore(k) { try { return localStorage.getItem(k) || ""; } catch (e) { return ""; } }
+  function writeStore(k, v) { try { if (v) localStorage.setItem(k, v); else localStorage.removeItem(k); return true; } catch (e) { return false; } }
+
+  var PROXY = (typeof window.KALIMA_PROXY === "string" ? window.KALIMA_PROXY.trim().replace(/\/+$/, "") : "");
+  var PASS_STORE = "kalima_passcode_v1";
+  var prefs = Object.assign({ access: "shared", theme: "system" }, getJSON(PREF_KEY, {}));
+  if (!prefs.lang) prefs.lang = (prefs.urdu === false) ? "off" : "ur";
+  if (["ur", "fa", "tr", "ru", "off"].indexOf(prefs.lang) < 0) prefs.lang = "ur";
+  if (["system", "light", "dark"].indexOf(prefs.theme) < 0) prefs.theme = "system";
+  var memPass = "";
+  function getPass() { return readStore(PASS_STORE) || memPass; }
+  function useShared() { return !!PROXY && prefs.access !== "own"; }
+  var memKey = "", memModel = "";
+  function getKey() { return readStore(KEY_STORE) || memKey; }
+  function getModel() { return readStore(MODEL_STORE) || memModel || DEFAULT_MODEL; }
+  function hasAccess() { return useShared() ? !!getPass() : !!getKey(); }
+  function needAccessMsg() { return useShared() ? "Enter your class passcode first (see Settings)." : "Add your Gemini key first (see Settings)."; }
+
+  var saved = (function () { var a = getJSON(SAVED_KEY, []); if (!Array.isArray(a)) return []; a.forEach(function (s) { if (s && s.data) migrateData(s.data); }); return a; })();
+  function persistSaved() { return setJSON(SAVED_KEY, saved); }
+  function findSaved(id) { for (var i = 0; i < saved.length; i++) if (saved[i].id === id) return saved[i]; return null; }
+
+  function migrateData(d) {
+    if (!d || typeof d !== "object") return d;
+    if (!d.trans) {
+      var m = d.meaning || {};
+      var legacy = !!(m.ur || d.rootGlossUr || (d.examples || []).some(function (e) { return e && e.ur; }) ||
+        (d.synonyms || []).some(function (e) { return e && e.ur; }) || (d.antonyms || []).some(function (e) { return e && e.ur; }));
+      if (legacy) {
+        d.trans = { ur: {
+          root: d.rootGlossUr || "", meaning: m.ur || "",
+          examples: (d.examples || []).map(function (e) { return (e && e.ur) || ""; }),
+          synonyms: (d.synonyms || []).map(function (e) { return (e && e.ur) || ""; }),
+          antonyms: (d.antonyms || []).map(function (e) { return (e && e.ur) || ""; })
+        } };
+      }
+    }
+    if (d.extras && Array.isArray(d.extras.rootWords)) {
+      d.extras.rootWords_ur = d.extras.rootWords.map(function (w) { var c = Object.assign({}, w); if (c.ur) c.tx = c.ur; delete c.ur; return c; });
+      delete d.extras.rootWords;
+    }
+    return d;
+  }
+  function absorbTrans(d, lang) {
+    if (!LANGS[lang] || !d || typeof d !== "object") return d;
+    var m = d.meaning || {};
+    var t = { root: d.rootGlossTx || "", meaning: m.tx || "", examples: [], synonyms: [], antonyms: [] };
+    (d.examples || []).forEach(function (e) { t.examples.push((e && e.tx) || ""); if (e) delete e.tx; });
+    (d.synonyms || []).forEach(function (e) { t.synonyms.push((e && e.tx) || ""); if (e) delete e.tx; });
+    (d.antonyms || []).forEach(function (e) { t.antonyms.push((e && e.tx) || ""); if (e) delete e.tx; });
+    delete d.rootGlossTx; delete m.tx;
+    d.trans = d.trans || {}; d.trans[lang] = t;
+    return d;
+  }
+  function setTrans(d, lang, r) {
+    function str(x) { return typeof x === "string" ? x : ""; }
+    function arr(a, n) { var out = []; for (var i = 0; i < n; i++) out.push(Array.isArray(a) && typeof a[i] === "string" ? a[i] : ""); return out; }
+    r = r || {};
+    d.trans = d.trans || {};
+    d.trans[lang] = { root: str(r.root), meaning: str(r.meaning),
+      examples: arr(r.examples, (d.examples || []).length), synonyms: arr(r.synonyms, (d.synonyms || []).length), antonyms: arr(r.antonyms, (d.antonyms || []).length) };
+  }
+  function T(d) { var l = prefs.lang; return (LANGS[l] && d && d.trans && d.trans[l]) || null; }
+  function trMeaning(d) { var t = T(d); return (t && t.meaning) || ""; }
+  function trRoot(d) { var t = T(d); return (t && t.root) || ""; }
+  function trList(d, key, i) { var t = T(d); return (t && t[key] && t[key][i]) || ""; }
+  function allMeanings(d) { var o = []; if (d && d.trans) Object.keys(d.trans).forEach(function (k) { if (d.trans[k] && d.trans[k].meaning) o.push(d.trans[k].meaning); }); return o; }
+
+  /* ---------- appearance ---------- */
+  var themeMedia = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+  function applyTheme() {
+    var root = document.documentElement;
+    if (prefs.theme === "light" || prefs.theme === "dark") root.setAttribute("data-theme", prefs.theme); else root.removeAttribute("data-theme");
+    var meta = document.querySelector('meta[name="theme-color"]');
+    var c = getComputedStyle(root).getPropertyValue("--paper").trim();
+    if (meta && c) meta.setAttribute("content", c);
+  }
+  if (themeMedia && themeMedia.addEventListener) themeMedia.addEventListener("change", applyTheme);
+
+  /* ---------- Gemini ---------- */
+  async function callProxy(prompt, signal) {
+    var pass = getPass();
+    if (!pass) throw { code: "no_passcode" };
+    var res;
+    try {
+      res = await fetch(PROXY, {
+        method: "POST", signal: signal,
+        headers: { "Content-Type": "application/json", "X-Passcode": pass },
+        body: JSON.stringify({ prompt: prompt })
+      });
+    } catch (e) {
+      if (e && e.name === "AbortError") throw { code: "cancelled" };
+      throw { code: "network" };
+    }
+    var j = null;
+    try { j = await res.json(); } catch (e) {}
+    if (!res.ok) throw { code: "http_" + res.status, message: (j && j.error && j.error.message) || "" };
+    if (!j || !j.text) throw { code: "empty" };
+    return { text: j.text };
+  }
+
+  async function callGemini(prompt, signal) {
+    if (useShared()) return callProxy(prompt, signal);
+    var key = getKey();
+    if (!key) throw { code: "no_key" };
+    var url = "https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(getModel()) + ":generateContent";
+    var res;
+    try {
+      res = await fetch(url, {
+        method: "POST",
+        signal: signal,
+        headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.2, maxOutputTokens: 8192, responseMimeType: "application/json" }
+        })
+      });
+    } catch (e) {
+      if (e && e.name === "AbortError") throw { code: "cancelled" };
+      throw { code: "network" };
+    }
+    if (!res.ok) {
+      var msg = "";
+      try { var ej = await res.json(); msg = (ej.error && ej.error.message) || ""; } catch (e) {}
+      throw { code: "http_" + res.status, message: msg };
+    }
+    var j = await res.json();
+    var cand = j.candidates && j.candidates[0];
+    var parts = (cand && cand.content && cand.content.parts) || [];
+    var text = parts.filter(function (p) { return !p.thought; }).map(function (p) { return p.text || ""; }).join("");
+    if (!text) throw { code: (j.promptFeedback && j.promptFeedback.blockReason) ? "blocked" : "empty" };
+    return { text: text };
+  }
+  function parseJson(text) {
+    var t = String(text).trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+    try { return JSON.parse(t); } catch (e) {}
+    var a = t.indexOf("{"), b = t.lastIndexOf("}");
+    if (a >= 0 && b > a) { try { return JSON.parse(t.slice(a, b + 1)); } catch (e) {} }
+    throw { code: "invalid_json" };
+  }
+  async function askJson(prompt, signal) {
+    var r = await callGemini(prompt, signal);
+    var d = parseJson(r.text);
+    if (!d || typeof d !== "object") throw { code: "invalid_json" };
+    return d;
+  }
+  function errCopy(e) {
+    var c = e && e.code, m = (e && e.message) || "";
+    if (c === "cancelled") return "Lookup stopped.";
+    if (useShared()) {
+      if (c === "no_passcode") return "Enter your class passcode first (see Settings).";
+      if (c === "http_401") return "That passcode isn't right. Check it in Settings.";
+      if (c === "http_404") return "The class server wasn't found. Ask whoever gave you this app.";
+      if (c === "http_429") return "The shared free limit is used up for now. Try again in a few minutes.";
+      if (c === "http_500") return "The class server isn't set up correctly. Tell whoever runs it.";
+      if (c === "http_502") return "The class server couldn't get an answer from Gemini. " + m;
+    }
+    if (c === "no_key") return "Add your Gemini key first (see Settings).";
+    if (c === "network") return "Couldn't reach Gemini. Check your internet connection and try again.";
+    if (c === "http_400") return /api key/i.test(m) ? "Gemini says the key isn't valid. Open Settings and paste it again." : "Gemini rejected the request. " + m;
+    if (c === "http_401" || c === "http_403") return "This key can't be used here. Open Settings, check it, or create a new one in AI Studio.";
+    if (c === "http_404") return "Gemini doesn't know that model name. Open Settings and check your Model.";
+    if (c === "http_429") return "Free limit reached for now. Wait a minute and try again.";
+    if (c && /^http_5/.test(c)) return "Gemini is busy right now. Try again in a moment.";
+    if (c === "blocked") return "Gemini declined this request. Check the spelling and try again.";
+    if (c === "invalid_json" || c === "empty") return "The reply couldn't be read. Try again.";
+    return "Something went wrong reaching Gemini. Try again.";
+  }
+
+  /* ---------- prompts ---------- */
+  function buildLookupPrompt(word) {
+    var L = curLang();
+    var out = [
+'You are an expert teacher of Modern Standard Arabic helping a learner whose languages are English' + (L ? ' and ' + L.name : '') + '. Analyze this Arabic word: ' + word,
+'',
+'Reply with ONLY one JSON object and nothing else, in exactly this shape:',
+'{',
+'  "word": "the word fully vocalized with tashkeel, as the user wrote it",',
+'  "transliteration": "simple Latin transliteration",',
+'  "partOfSpeech": "verb | noun | adjective | adverb | preposition | particle | pronoun | other",',
+'  "grammarNote": "for nouns and adjectives: gender and plural, e.g. feminine · plural مَدَارِسُ. Otherwise null",',
+'  "root": ["ك","ت","ب"],',
+'  "rootGloss": "core idea of the root in English, 2-5 words",',
+L ? '  "rootGlossTx": "the same idea in ' + L.name + '",' : null,
+'  "wazn": { "pattern": "the morphological pattern (وزن) of the word EXACTLY as typed, written with the root letters ف ع ل and vowel marks, e.g. فَاعِل, مَفْعَلَة, أَفْعَال, يَفْعُلُونَ, اِسْتَفْعَلَ", "note": "very short English label, e.g. active participle, noun of place, broken plural, form X past" },',
+'  "meaning": { "en": "clear English meaning", ' + (L ? '"tx": "clear, natural ' + L.name + ' meaning", ' : '') + '"ar": "short, simple Arabic definition, fully vocalized" },',
+'  "examples": [ { "ar": "Arabic sentence", "en": "English translation"' + (L ? ', "tx": "' + L.name + ' translation"' : '') + ' }, { "ar": "...", "en": "..."' + (L ? ', "tx": "..."' : '') + ' } ],',
+'  "forms": ' + (lookupMode === 'fast' ? '[]' : '["up to 25 related forms..."]') + ',',
+'  "verb": null,',
+'  "synonyms": ' + (lookupMode === 'fast' ? '[]' : '[ { "ar": "...", "en": "English gloss"' + (L ? ', "tx": "' + L.name + ' gloss"' : '') + ' } ]') + ',',
+'  "antonyms": ' + (lookupMode === 'fast' ? '[]' : '[ { "ar": "...", "en": "English gloss"' + (L ? ', "tx": "' + L.name + ' gloss"' : '') + ' } ]') + ',',
+'  "note": null',
+'}',
+'',
+'Rules:',
+'- Fully vocalize (tashkeel) ALL Arabic text you write.',
+L ? '- All ' + L.name + ' text must be natural ' + L.prompt + ', not transliteration.' : null,
+'- "root": the root letters as separate single characters, in order. If the word has no root, use [] and set rootGloss' + (L ? ' and rootGlossTx' : '') + ' to null.',
+'- "wazn": ALWAYS give the wazn of the word as typed, for every kind of word. Replace the root letters with ف ع ل. Only use null if the word truly has no pattern.',
+'- "examples": exactly 2 natural sentences that use the word.',
+lookupMode === 'fast' ? '- FAST MODE: Set "forms", "synonyms", "antonyms" to []. Set "verb" to null. Set "grammarNote" and "note" to "". Do not generate extra related forms. Keep the response as short and fast as possible.' : '- "synonyms": 3 to 5 items. "antonyms": 1 to 3 items.',
+'- If the word is ambiguous without vowels, choose the most common meaning and mention the alternatives briefly in "note" (English). Otherwise "note" is null.',
+'- If the input is not an Arabic word or is meaningless, reply only with {"error": "short reason in English"}.',
+'- If several words were given, analyze only the first.'
+    ];
+
+    if (lookupMode !== 'fast') {
+      out.push(
+'- If (and only if) the word is a verb in ANY tense, person or the imperative, set "verb" to this object; otherwise keep it null:',
+'  {',
+'    "form": "I, II, III, IV, V, VI, VII, VIII, IX or X",',
+'    "pattern": "past and present pattern of this form",',
+'    "dictionaryForm": "past tense, he (3rd masc. singular), vocalized",',
+'    "presentForm": "present tense, he (3rd masc. singular), vocalized",',
+'    "masdar": "the masdar (verbal noun) of this verb, vocalized. Always provide it",',
+'    "masdarWazn": "the wazn of that masdar using ف ع ل",',
+'    "inputTense": "past | present | imperative",',
+'    "inputPerson": "who the typed form refers to",',
+'    "inputMatch": { "index": 2, "tense": "present" },',
+'    "conjugation": []',
+'  }',
+'- "conjugation": ALWAYS return an empty array [] here. The user will request conjugations separately.',
+'  "inputMatch": index (0-13) into the conjugation list (0 هُوَ ... 13 نَحْنُ) and which tense column the typed word matches, or null if it is an imperative or does not match.'
+      );
+    }
+    return out.filter(function (x) { return x !== null; }).join("\n");
+  }
+
+  function buildConjugatePrompt(verb) {
+    return [
+      'You are an expert Arabic teacher. Provide the full 14-pronoun conjugation for the Arabic verb: ' + verb,
+      '',
+      'Reply with ONLY one JSON object in exactly this shape:',
+      '{',
+      '  "conjugation": [ { "past": "...", "present": "...", "subjunctive": "...", "jussive": "...", "imperative": "...", "passivePast": "...", "passivePresent": "..." } ]',
+      '}',
+      '',
+      'Rules:',
+      '- The array must contain exactly 14 items in this order: ' + ORDER_TEXT + '.',
+      '- Give the verb only, without the pronoun.',
+      '- "passivePast" and "passivePresent": the passive voice. If the verb is intransitive and doesn\'t take a passive, use "" for all items.',
+      '- "imperative": only fill it for 2nd person (indices 6-11); use "" for others.',
+      '- Fully vocalize (tashkeel) all Arabic text. Take extra care with hollow, defective, doubled and hamzated verbs.'
+    ].join("\n");
+  }
+
+  function buildReversePrompt(text) {
+    var L = curLang();
+    return [
+'A learner typed this word or phrase in English, Urdu, Persian (Farsi), Turkish or Russian: ' + text,
+'Give the best Modern Standard Arabic equivalents.',
+'Reply with ONLY one JSON object in this shape:',
+'{"results":[{"ar":"fully vocalized Arabic word or short phrase","transliteration":"simple Latin transliteration","partOfSpeech":"verb | noun | adjective | ...","en":"short English meaning"' + (L ? ',"tx":"short ' + L.name + ' meaning"' : '') + '}]}',
+'Give 3 to 5 results, most common and natural first. For verbs use the past tense he-form (the dictionary form). Fully vocalize all Arabic.',
+'If the input is not a real word or phrase, reply only with {"error":"short reason in English"}.'
+    ].join("\n");
+  }
+
+  function buildRootPrompt(letters, word) {
+    var L = curLang();
+    return [
+'Arabic root: ' + letters.join(" ") + '. The learner just looked up: ' + word,
+'List 8 to 12 common Modern Standard Arabic words made from this root. Do not include the word they already looked up.',
+'Reply with ONLY one JSON object: {"words":[{"ar":"fully vocalized word","partOfSpeech":"verb | noun | adjective | ...","wazn":"pattern using ف ع ل","en":"short English meaning"' + (L ? ',"tx":"short ' + L.name + ' meaning"' : '') + '}]}'
+    ].join("\n");
+  }
+
+  function buildTransPrompt(d, lang) {
+    var L = LANGS[lang], m = d.meaning || {}, ex = d.examples || [], sy = d.synonyms || [], an = d.antonyms || [];
+    function nums(list, f) { return list.length ? list.map(function (x, i) { return (i + 1) + ". " + f(x); }).join("\n") : "(none)"; }
+    return [
+'Translate the following into ' + L.prompt + '. Arabic word: ' + d.word,
+'Reply with ONLY one JSON object: {"root":"...","meaning":"...","examples":["..."],"synonyms":["..."],"antonyms":["..."]}',
+'The lists must contain exactly ' + ex.length + ' examples, ' + sy.length + ' synonyms and ' + an.length + ' antonyms, in the same order. Natural translations, not transliteration.',
+'root (the core idea of the root): ' + (d.rootGloss || "(none)"),
+'meaning: ' + (m.en || ""),
+'examples (translate the English):\n' + nums(ex, function (x) { return (x && x.en) || ""; }),
+'synonyms (give the meaning of each Arabic word):\n' + nums(sy, function (x) { return ((x && x.ar) || "") + " = " + ((x && x.en) || ""); }),
+'antonyms (give the meaning of each Arabic word):\n' + nums(an, function (x) { return ((x && x.ar) || "") + " = " + ((x && x.en) || ""); })
+    ].join("\n");
+  }
+
+  var voicesReady = false;
+  function arabicVoice() {
+    if (!("speechSynthesis" in window)) return null;
+    var vs = speechSynthesis.getVoices() || [];
+    for (var i = 0; i < vs.length; i++) if (/^ar/i.test(vs[i].lang)) return vs[i];
+    return null;
+  }
+  if ("speechSynthesis" in window) {
+    try { speechSynthesis.getVoices(); speechSynthesis.addEventListener("voiceschanged", function () { voicesReady = true; }); } catch (e) {}
+  }
+  function speak(text) {
+    if (!text) return;
+    if (!("speechSynthesis" in window)) { toast("This browser can't read text aloud."); return; }
+    try {
+      speechSynthesis.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      u.lang = "ar-SA"; u.rate = 0.85;
+      var v = arabicVoice();
+      if (v) u.voice = v;
+      else if (voicesReady) toast("No Arabic voice found. In Android Settings, search Text-to-speech and install Arabic.");
+      speechSynthesis.speak(u);
+    } catch (e) { toast("Couldn't play audio on this device."); }
+  }
+  function speakBtn(text, label) {
+    var b = el("button", { "class": "iconbtn", type: "button", "aria-label": label || "Listen", title: "Listen", onclick: function () { speak(text); } });
+    b.innerHTML = SPEAKER_SVG;
+    return b;
+  }
+
+  /* ---------- view state ---------- */
+  var busy = false, ctl = null, currentData = null, lastReverse = null;
+
+  function setStatus(node) { statusEl.replaceChildren(); if (node) statusEl.append(node); }
+  function showError(text) { setStatus(el("p", { "class": "msg err", text: text })); }
+
+  window.showTab = function(name) {
+    ["lookup", "saved", "practice", "settings"].forEach(function (n) { $("#view-" + n).hidden = (n !== name); });
+    document.querySelectorAll(".dock-nav-item").forEach(function (b) {
+      if (b.dataset.tab === name) b.classList.add("active"); else b.classList.remove("active");
+    });
+    if (name === "saved") renderSaved();
+    if (name === "practice") renderPractice();
+    window.scrollTo(0, 0);
+  };
+
+  window.toggleMenu = function(id) {
+    var menu = document.getElementById(id);
+    if (!menu) return;
+    var isHidden = !menu.classList.contains('show');
+    document.querySelectorAll('.dropdown').forEach(function (m) { m.classList.remove('show'); });
+    if (isHidden) menu.classList.add('show');
+  };
+
+  window.setLookupMode = function(m) {
+    lookupMode = m;
+    $("#dock-btn-mode").textContent = m === 'fast' ? "Fast" : "Deep";
+    $("#mode-drop").classList.remove("show");
+  };
+
+  window.setGlobalLang = function(l) {
+    prefs.lang = l;
+    setJSON(PREF_KEY, prefs);
+    $("#dock-btn-lang").textContent = l === 'off' ? 'Off' : LANGS[l].native;
+    $("#lang-drop").classList.remove("show");
+    syncPickers();
+    rerenderAll();
+  };
+
+  window.clearUI = function() {
+    currentData = null;
+    lastReverse = null;
+    resultEl.replaceChildren();
+    emptyEl.hidden = false;
+    paintSaveBtn();
+  };
+
+  window.toggleSaveCurrent = function() {
+    if (!currentData) return;
+    toggleSave(currentData);
+    paintSaveBtn();
+  };
+
+  function paintSaveBtn() {
+    var btn = $("#dock-btn-save");
+    if (!btn) return;
+    if (currentData && findSaved(currentData.word)) {
+      btn.textContent = "Saved ✓";
+      btn.classList.add("active");
+    } else {
+      btn.textContent = "Save";
+      btn.classList.remove("active");
+    }
+  }
+
+  window.addEventListener("click", function (e) {
+    if (!e.target.closest('button')) {
+      document.querySelectorAll('.dropdown').forEach(function (m) { m.classList.remove('show'); });
+    }
+  });
+
+  /* ---------- running a lookup ---------- */
+  async function guarded(fn) {
+    if (busy) return;
+    if (!hasAccess()) { showTab("settings"); showError(needAccessMsg()); return; }
+    busy = true; goBtn.disabled = true;
+    emptyEl.hidden = true; resultEl.replaceChildren();
+    ctl = new AbortController();
+    setStatus(el("div", { "class": "loading" },
+      el("span", { "class": "dot", "aria-hidden": "true" }),
+      el("span", { text: "Working on it. This can take up to a minute." }),
+      el("button", { "class": "dock-pill", type: "button", text: "Stop", onclick: function () { if (ctl) ctl.abort(); } })
+    ));
+    try { await fn(ctl.signal); }
+    catch (e) {
+      var code = e && e.code;
+      showError(errCopy(e));
+      if (code === "cancelled") emptyEl.hidden = false;
+    } finally { busy = false; goBtn.disabled = false; ctl = null; paintSaveBtn(); }
+  }
+
+  function run() {
+    showTab("lookup");
+    var raw = input.value.trim().replace(/\s+/g, " ").slice(0, 80);
+    if (!raw) { showError("Type a word first."); return; }
+    var hasAr = /[\u0600-\u06FF]/.test(raw), hasLatin = /[A-Za-z\u00C0-\u024F]/.test(raw);
+    if (!hasAr && hasLatin) {
+      return guarded(function (signal) { return doReverse(raw, signal); });
+    }
+    return guarded(function (signal) { return doArabic(raw.slice(0, 60), signal); });
+  }
+
+  async function doArabic(word, signal) {
+    var data = await askJson(buildLookupPrompt(word), signal);
+    setStatus(null);
+    if (!data.error && !data.word) data.word = word;
+    if (!data.error) { if (curLang()) absorbTrans(data, prefs.lang); migrateData(data); }
+    renderResult(data);
+  }
+
+  async function doReverse(text, signal) {
+    var data = await askJson(buildReversePrompt(text), signal);
+    setStatus(null);
+    lastReverse = { d: data, q: text, lang: prefs.lang };
+    currentData = null;
+    renderReverse(data, text, prefs.lang);
+  }
+
+  function openWord(w) { input.value = w; run(); }
+
+  function openSaved(s) {
+    showTab("lookup");
+    input.value = (s.data && s.data.word) || s.id;
+    setStatus(null); emptyEl.hidden = true;
+    renderResult(s.data);
+  }
+
+  /* ---------- rendering: lookup result ---------- */
+  function renderResult(d) {
+    currentData = d; lastReverse = null;
+    resultEl.replaceChildren();
+    if (d.error) { resultEl.append(el("p", { "class": "msg err", text: String(d.error) })); return; }
+    resultEl.append(rootBand(d));
+    var more = rootMoreBlock(d);
+    if (more) resultEl.append(more);
+    [wordHead(d), transBanner(d), meaningSec(d), examplesSec(d), textSections(d)].filter(Boolean).forEach(function (n) { resultEl.append(n); });
+    if (d.verb && typeof d.verb === "object") resultEl.append(verbSec(d));
+    resultEl.append(relatedSec(d));
+    if (d.note) resultEl.append(el("p", { "class": "note", text: String(d.note) }));
+    paintSaveBtn();
+  }
+
+  function rootBand(d) {
+    var letters = Array.isArray(d.root) ? d.root.filter(Boolean) : [];
+    var info = el("div", null, el("h2", { text: "Root" }));
+    if (letters.length) {
+      if (d.rootGloss) info.append(el("p", { text: d.rootGloss }));
+      if (trRoot(d)) info.append(tx(trRoot(d)));
+    } else info.append(el("p", { text: "No root: this looks like a particle or a loanword." }));
+    var band = el("section", { "class": "rootband" }, info);
+    if (letters.length) {
+      var tiles = el("div", { "class": "tiles", dir: "rtl", role: "img", "aria-label": "Root letters: " + letters.join(" ") });
+      letters.forEach(function (l) { tiles.append(el("span", { "class": "tile", lang: "ar", text: l })); });
+      band.append(tiles);
+    }
+    return band;
+  }
+
+  function extraToggle(d, key, labelOn, labelOff, loader, renderer) {
+    var out = el("div", { "class": "extraout" });
+    var btn = el("button", { "class": "btn ghost", type: "button", text: labelOn });
+    btn.addEventListener("click", async function () {
+      if (out.childNodes.length) { out.replaceChildren(); btn.textContent = labelOn; return; }
+      d.extras = d.extras || {};
+      if (d.extras[key]) { renderer(out, d.extras[key]); btn.textContent = labelOff; return; }
+      btn.disabled = true; btn.textContent = "Loading…";
+      try {
+        d.extras[key] = await loader();
+        if (findSaved(d.word)) persistSaved();
+        renderer(out, d.extras[key]);
+        btn.textContent = labelOff;
+      } catch (e) {
+        out.replaceChildren(el("p", { "class": "msg err", text: errCopy(e) }));
+        btn.textContent = labelOn;
+      } finally { btn.disabled = false; }
+    });
+    return el("div", { "class": "extra" }, btn, out);
+  }
+
+  function rootMoreBlock(d) {
+    var letters = Array.isArray(d.root) ? d.root.filter(Boolean) : [];
+    if (!letters.length) return null;
+    return extraToggle(d, "rootWords_" + prefs.lang, "Words from this root", "Hide words from this root",
+      async function () { var r = await askJson(buildRootPrompt(letters, d.word)); return Array.isArray(r.words) ? r.words : []; },
+      function (out, words) {
+        if (!words.length) { out.append(el("p", { "class": "muted", text: "No other common words found." })); return; }
+        words.forEach(function (w) { if (w && w.ar) out.append(candButton(w, prefs.lang)); });
+      });
+  }
+
+  function candButton(w, lang) {
+    var meta = el("span", { "class": "candmeta" });
+    if (w.transliteration) meta.append(el("span", { "class": "translit", text: w.transliteration }));
+    if (w.partOfSpeech) meta.append(el("span", { "class": "pos", text: w.partOfSpeech }));
+    if (w.wazn) meta.append(ar(w.wazn));
+    var gl = el("span", { "class": "gloss", text: w.en || "" });
+    var b = el("button", { "class": "cand", type: "button", onclick: function () { openWord(w.ar); } },
+      ar(w.ar, "candword"), meta, gl, (lang === prefs.lang && curLang() && w.tx) ? tx(w.tx) : null);
+    return b;
+  }
+
+  function wordHead(d) {
+    var meta = el("div", { "class": "wmeta" });
+    if (d.transliteration) meta.append(el("p", { "class": "translit", text: d.transliteration }));
+    var line = el("p");
+    if (d.partOfSpeech) line.append(el("span", { "class": "pos", text: d.partOfSpeech }));
+    if (d.grammarNote) line.append(el("span", { "class": "gram", dir: "auto", text: d.grammarNote }));
+    meta.append(line);
+    var w = d.wazn && typeof d.wazn === "object" ? d.wazn : null;
+    if (w && w.pattern) {
+      var wl = el("p", { "class": "wazn" }, el("span", { "class": "k", text: "Wazn" }), ar(w.pattern, "wpat"));
+      if (w.note) wl.append(el("span", { "class": "gram", text: w.note }));
+      meta.append(wl);
+    }
+    var row = el("div", { "style": "display: flex; justify-content: space-between; align-items: center; width: 100%;" },
+      meta,
+      ar(d.word, "bigword")
+    );
+    var listen = el("button", { "class": "btn ghost", "style": "margin-top:16px;", type: "button", onclick: function () { speak(d.word); } });
+    listen.innerHTML = SPEAKER_SVG + "<span>Listen</span>";
+    return el("section", { "class": "wordhead" }, row, listen);
+  }
+
+  function toggleSave(d) {
+    var i = -1;
+    for (var k = 0; k < saved.length; k++) if (saved[k].id === d.word) i = k;
+    if (i >= 0) saved.splice(i, 1);
+    else saved.unshift({ id: d.word, added: Date.now(), box: 0, due: 0, data: d });
+    if (!persistSaved()) {
+      saved = getJSON(SAVED_KEY, []);
+      toast("Couldn't save: storage is full or blocked in this browser.");
+    }
+  }
+
+  function trBlock(text) {
+    var L = curLang();
+    if (!L || !text) return null;
+    return el("div", { "class": "trblock" }, el("span", { "class": "tag", lang: prefs.lang, text: L.native }), tx(text));
+  }
+
+  function transBanner(d) {
+    var L = curLang(), lang = prefs.lang;
+    if (!L || T(d)) return null;
+    var msg = el("span", { text: "No " + L.name + " translation saved for this word yet." });
+    var label = "Add " + L.name + " translation";
+    var btn = el("button", { "class": "btn ghost", type: "button", text: label });
+    btn.addEventListener("click", async function () {
+      btn.disabled = true; btn.textContent = "Translating…";
+      try {
+        var r = await askJson(buildTransPrompt(d, lang));
+        setTrans(d, lang, r);
+        if (findSaved(d.word)) persistSaved();
+        if (currentData === d) renderResult(d);
+      } catch (e) {
+        btn.disabled = false; btn.textContent = label; msg.textContent = errCopy(e);
+      }
+    });
+    return el("div", { "class": "tbanner" }, msg, btn);
+  }
+
+  function meaningSec(d) {
+    var m = d.meaning || {};
+    return el("section", { "class": "sec" },
+      el("h2", { text: "Meaning" }),
+      el("div", { "class": "bi" },
+        el("div", { "class": "colhead", text: "English" }),
+        el("div", { "class": "colhead right", lang: "ar", text: "العربية" }),
+        el("div", { "class": "en", text: m.en || "" }),
+        el("div", { "class": "arcol", lang: "ar", dir: "rtl", text: m.ar || "" })
+      ),
+      trBlock(trMeaning(d)));
+  }
+
+  function examplesSec(d) {
+    var sec = el("section", { "class": "sec" }, el("h2", { text: "In a sentence" }));
+    (Array.isArray(d.examples) ? d.examples : []).forEach(function (x, i) {
+      if (!x) return;
+      var arcol = el("div", { "class": "arcol", lang: "ar", dir: "rtl" }, x.ar || "", el("span", { "class": "spk" }, speakBtn(x.ar, "Listen")));
+      sec.append(el("div", { "class": "pair" },
+        el("div", { "class": "bi" }, el("div", { "class": "en", text: x.en || "" }), arcol),
+        trBlock(trList(d, "examples", i))));
+    });
+    return sec;
+  }
+
+  function fact(k, v, isArabic) {
+    return el("div", { "class": "fact" }, el("div", { "class": "k", text: k }), el("div", { "class": "v" }, isArabic ? ar(v) : v));
+  }
+
+  function cell(text, hit) {
+    var td = el("td", { "class": "c" + (hit ? " hit" : ""), lang: "ar", text: text || "", title: "Tap to hear" });
+    if (text) td.addEventListener("click", function () { speak(text); });
+    return td;
+  }
+
+  function verbSec(d) {
+    var v = d.verb;
+    var sec = el("section", { "class": "sec" }, el("h2", { text: "Verb" }));
+    var f = String(v.form || "").trim();
+    var formText = /^[IVX]+$/i.test(f) ? "Form " + f.toUpperCase() : f;
+    var facts = el("div", { "class": "facts" });
+    if (formText) {
+      var fv = el("div", { "class": "v" }, formText);
+      if (v.pattern) fv.append(ar(v.pattern));
+      facts.append(el("div", { "class": "fact" }, el("div", { "class": "k", text: "Verb form" }), fv));
+    }
+    var tense = [v.inputTense ? cap(v.inputTense) + " tense" : "", v.inputPerson || ""].filter(Boolean).join(", ");
+    if (tense) facts.append(fact("Your word is", tense, false));
+    if (v.dictionaryForm) facts.append(fact("Dictionary form (he, past)", v.dictionaryForm, true));
+    if (v.presentForm) facts.append(fact("Present (he)", v.presentForm, true));
+    if (v.masdar) {
+      var mv = el("div", { "class": "v" }, ar(v.masdar));
+      if (v.masdarWazn) mv.append(el("span", { "class": "sub" }, "Wazn ", ar(v.masdarWazn)));
+      facts.append(el("div", { "class": "fact" }, el("div", { "class": "k", text: "Masdar (verbal noun)" }), mv));
+    }
+    sec.append(facts);
+
+    sec.append(el("h3", { text: "All 14 forms" }));
+    var conj = Array.isArray(v.conjugation) ? v.conjugation : [];
+    if (conj.length === 0) {
+      var btn = el("button", { "class": "btn ghost", "style": "width: 100%;", type: "button", text: "Show 14x7 Conjugations" });
+      btn.addEventListener("click", async function () {
+        btn.disabled = true; btn.textContent = "Loading...";
+        try {
+          var r = await askJson(buildConjugatePrompt(v.dictionaryForm || d.word));
+          v.conjugation = r.conjugation;
+          if (findSaved(d.word)) persistSaved();
+          renderResult(d);
+        } catch (e) {
+          btn.disabled = false; btn.textContent = "Show 14x7 Conjugations";
+          toast(errCopy(e));
         }
+      });
+      sec.append(btn);
+    } else {
+      var m = v.inputMatch && typeof v.inputMatch === "object" ? v.inputMatch : null;
+      var tbody = el("tbody"), hitFound = false;
+      PRONOUNS.forEach(function (p, i) {
+        var c = conj[i] || {};
+        var hitPast = m && m.index === i && m.tense === "past";
+        var hitPres = m && m.index === i && m.tense === "present";
+        var hitSubj = m && m.index === i && m.tense === "subjunctive";
+        var hitJuss = m && m.index === i && m.tense === "jussive";
+        var hitImp = m && m.index === i && m.tense === "imperative";
+        var hitPPast = m && m.index === i && m.tense === "passivePast";
+        var hitPPres = m && m.index === i && m.tense === "passivePresent";
+        if (hitPast || hitPres || hitSubj || hitJuss || hitImp || hitPPast || hitPPres) hitFound = true;
+        tbody.append(el("tr", { "class": (i === 6 || i === 12) ? "grp" : "" },
+          el("th", { scope: "row" }, ar(p[0]), p[1]), 
+          cell(c.past, hitPast), cell(c.present, hitPres), 
+          cell(c.subjunctive, hitSubj), cell(c.jussive, hitJuss), cell(c.imperative, hitImp), 
+          cell(c.passivePast, hitPPast), cell(c.passivePresent, hitPPres)
+        ));
+      });
+      var table = el("table", { "class": "conj" },
+        el("thead", null, el("tr", null, el("th", { text: "Who" }),
+          el("th", { "class": "r" }, ar("الماضي", "tha"), "Past"),
+          el("th", { "class": "r" }, ar("المضارع", "tha"), "Present"),
+          el("th", { "class": "r" }, "Subj."), el("th", { "class": "r" }, "Juss."), el("th", { "class": "r" }, "Imp."),
+          el("th", { "class": "r" }, "Pas. Past"), el("th", { "class": "r" }, "Pas. Pres.")
+        )),
+        tbody);
+      sec.append(el("div", { "class": "tablewrap" }, table));
+      var legend = "Tap any form to hear it." + (hitFound ? " The highlighted cell is the form you typed." : "");
+      sec.append(el("p", { "class": "legend", text: legend }));
+    }
+    return sec;
+  }
 
-        function toggleDropdown(id) {
-            var menus = document.querySelectorAll('[id$="-menu"]');
-            for (var i = 0; i < menus.length; i++) {
-                if (menus[i].id !== id) menus[i].classList.add('hidden');
-            }
-            document.getElementById(id).classList.toggle('hidden');
+  function relList(title, items, emptyText, d, key) {
+    var col = el("div", null, el("h2", { text: title }));
+    var list = (Array.isArray(items) ? items : []).map(function (x, i) { return { x: x, i: i }; }).filter(function (o) { return o.x && o.x.ar; });
+    if (!list.length) { col.append(el("p", { "class": "none", text: emptyText })); return col; }
+    var ul = el("ul", { "class": "rel" });
+    list.forEach(function (o) {
+      var x = o.x, t = trList(d, key, o.i);
+      ul.append(el("li", null,
+        el("span", { "class": "gl" }, el("span", { "class": "en", text: x.en || "" }), t ? tx(t) : null),
+        ar(x.ar)));
+    });
+    col.append(ul);
+    return col;
+  }
+  function relatedSec(d) {
+    return el("section", { "class": "sec two" },
+      relList("Synonyms", d.synonyms, "No close synonyms.", d, "synonyms"),
+      relList("Antonyms", d.antonyms, "No clear antonym.", d, "antonyms"));
+  }
+
+  /* ---------- rendering: English/Urdu -> Arabic ---------- */
+  function renderReverse(d, q, lang) {
+    resultEl.replaceChildren();
+    if (d.error) { resultEl.append(el("p", { "class": "msg err", text: String(d.error) })); return; }
+    var list = Array.isArray(d.results) ? d.results.filter(function (r) { return r && r.ar; }) : [];
+    if (!list.length) { resultEl.append(el("p", { "class": "muted", text: "No Arabic matches found." })); return; }
+    resultEl.append(el("h2", { "class": "revh", text: "Arabic for “" + q + "”" }),
+      el("p", { "class": "hint", text: "Tap a word for the full breakdown." }));
+    list.forEach(function (r) { resultEl.append(candButton(r, lang)); });
+  }
+
+  /* ---------- Quran and Nahj al-Balagha ---------- */
+  var KS = window.KalimaSearch;
+  var SURAH_EN = ["Al-Fatihah","Al-Baqarah","Ali 'Imran","An-Nisa","Al-Ma'idah","Al-An'am","Al-A'raf","Al-Anfal","At-Tawbah","Yunus","Hud","Yusuf","Ar-Ra'd","Ibrahim","Al-Hijr","An-Nahl","Al-Isra","Al-Kahf","Maryam","Ta-Ha","Al-Anbiya","Al-Hajj","Al-Mu'minun","An-Nur","Al-Furqan","Ash-Shu'ara","An-Naml","Al-Qasas","Al-'Ankabut","Ar-Rum","Luqman","As-Sajdah","Al-Ahzab","Saba","Fatir","Ya-Sin","As-Saffat","Sad","Az-Zumar","Ghafir","Fussilat","Ash-Shura","Az-Zukhruf","Ad-Dukhan","Al-Jathiyah","Al-Ahqaf","Muhammad","Al-Fath","Al-Hujurat","Qaf","Adh-Dhariyat","At-Tur","An-Najm","Al-Qamar","Ar-Rahman","Al-Waqi'ah","Al-Hadid","Al-Mujadila","Al-Hashr","Al-Mumtahanah","As-Saff","Al-Jumu'ah","Al-Munafiqun","At-Taghabun","At-Talaq","At-Tahrim","Al-Mulk","Al-Qalam","Al-Haqqah","Al-Ma'arij","Nuh","Al-Jinn","Al-Muzzammil","Al-Muddaththir","Al-Qiyamah","Al-Insan","Al-Mursalat","An-Naba","An-Nazi'at","'Abasa","At-Takwir","Al-Infitar","Al-Mutaffifin","Al-Inshiqaq","Al-Buruj","At-Tariq","Al-A'la","Al-Ghashiyah","Al-Fajr","Al-Balad","Ash-Shams","Al-Layl","Ad-Duha","Ash-Sharh","At-Tin","Al-'Alaq","Al-Qadr","Al-Bayyinah","Az-Zalzalah","Al-'Adiyat","Al-Qari'ah","At-Takathur","Al-'Asr","Al-Humazah","Al-Fil","Quraysh","Al-Ma'un","Al-Kawthar","Al-Kafirun","An-Nasr","Al-Masad","Al-Ikhlas","Al-Falaq","An-Nas"];
+  var SURAH_AR = ["الفاتحة","البقرة","آل عمران","النساء","المائدة","الأنعام","الأعراف","الأنفال","التوبة","يونس","هود","يوسف","الرعد","إبراهيم","الحجر","النحل","الإسراء","الكهف","مريم","طه","الأنبياء","الحج","المؤمنون","النور","الفرقان","الشعراء","النمل","القصص","العنكبوت","الروم","لقمان","السجدة","الأحزاب","سبأ","فاطر","يس","الصافات","ص","الزمر","غافر","فصلت","الشورى","الزخرف","الدخان","الجاثية","الأحقاف","محمد","الفتح","الحجرات","ق","الذاريات","الطور","النجم","القمر","الرحمن","الواقعة","الحديد","المجادلة","الحشر","الممتحنة","الصف","الجمعة","المنافقون","التغابن","الطلاق","التحريم","الملك","القلم","الحاقة","المعارج","نوح","الجن","المزمل","المدثر","القيامة","الإنسان","المرسلات","النبأ","النازعات","عبس","التكوير","الانفطار","المطففين","الانشقاق","البروج","الطارق","الأعلى","الغاشية","الفجر","البلد","الشمس","الليل","الضحى","الشرح","التين","العلق","القدر","البينة","الزلزلة","العاديات","القارعة","التكاثر","العصر","الهمزة","الفيل","قريش","الماعون","الكوثر","الكافرون","النصر","المسد","الإخلاص","الفلق","الناس"];
+  var NAHJ_KIND_AR = { S: "خطبة", L: "كتاب", H: "حكمة" };
+  var corpora = {};
+
+  function loadCorpus(name) {
+    if (!corpora[name]) {
+      corpora[name] = fetch(name + "-data.json")
+        .then(function (r) { if (!r.ok) throw new Error("load"); return r.json(); })
+        .then(function (data) {
+          var c = { name: name, data: data };
+          if (name === "quran") {
+            c.units = data.verses; c.cum = []; var s = 0;
+            data.counts.forEach(function (n) { c.cum.push(s); s += n; });
+            c.index = KS.buildIndex(c.units, KS.quranVariants);
+          } else {
+            c.units = data.p.map(function (x) { return x[2]; });
+            c.index = KS.buildIndex(c.units, KS.standardVariants);
+          }
+          return c;
+        })
+        .catch(function (e) { delete corpora[name]; throw e; });
+    }
+    return corpora[name];
+  }
+
+  function collectForms(d) {
+    var verbForms = [], forms = [], exact = d.word ? [d.word] : [], v = d.verb && typeof d.verb === "object" ? d.verb : null;
+    if (v) {
+      (Array.isArray(v.conjugation) ? v.conjugation : []).forEach(function (c) { if (c) { verbForms.push(c.past, c.present); } });
+      verbForms.push(v.dictionaryForm, v.presentForm);
+      if (v.masdar) forms.push(v.masdar);
+    } else if (d.word) forms.push(d.word);
+    (Array.isArray(d.forms) ? d.forms : []).forEach(function (f) { forms.push(f); });
+    function clean(list) {
+      var seen = {}, out = [];
+      list.forEach(function (f) { var n = KS.baseNorm(f); if (n && !seen[n]) { seen[n] = 1; out.push(f); } });
+      return out;
+    }
+    return { forms: clean(forms), verbForms: clean(verbForms), exact: exact, exactIsVerb: !!v };
+  }
+
+  function diverse(matches, groupOf) {
+    var seen = {}, first = [], rest = [];
+    matches.forEach(function (m) {
+      var g = groupOf(m.u);
+      if (!seen[g] && first.length < 3) { seen[g] = 1; first.push(m); } else rest.push(m);
+    });
+    return first.concat(rest);
+  }
+
+  function quranRef(c, u) {
+    var s = 0;
+    while (s + 1 < c.cum.length && c.cum[s + 1] <= u) s++;
+    return { surah: s + 1, ayah: u - c.cum[s] + 1 };
+  }
+
+  function textCard(c, m) {
+    var isQuran = c.name === "quran", toks = c.index.toks[m.u], hit = {}, maxT = 42;
+    m.toks.forEach(function (i) { hit[i] = 1; });
+    function quote(s, e) {
+      var p = el("p", { "class": "quote", lang: "ar", dir: "rtl" });
+      if (s > 0) p.append("… ");
+      for (var i = s; i < e; i++) { p.append(hit[i] ? el("mark", { text: toks[i] }) : toks[i], " "); }
+      if (e < toks.length) p.append("…");
+      return p;
+    }
+    var start = 0, end = toks.length;
+    if (toks.length > maxT) { start = Math.max(0, m.toks[0] - 14); end = Math.min(toks.length, start + maxT); start = Math.max(0, end - maxT); }
+    var body = el("div", null, quote(start, end));
+    var ref;
+    if (isQuran) {
+      var r = quranRef(c, m.u);
+      ref = el("div", { "class": "ref" }, el("span", { "class": "refen", text: SURAH_EN[r.surah - 1] + " " + r.surah + ":" + r.ayah }), ar("سورة " + SURAH_AR[r.surah - 1], "refar"));
+    } else {
+      var p = c.data.p[m.u], kind = c.data.kinds[p[0]];
+      ref = el("div", { "class": "ref" }, el("span", { "class": "refen", text: kind + " " + p[1] }), ar(NAHJ_KIND_AR[p[0]] + " " + p[1], "refar"));
+    }
+    var card = el("div", { "class": "tcard" + (isQuran ? "" : " nahj") }, body, ref);
+    if (start > 0 || end < toks.length) {
+      var expanded = false;
+      var btn = el("button", { "class": "linkbtn more", type: "button", text: "Show the full " + (isQuran ? "verse" : "passage") });
+      btn.addEventListener("click", function () {
+        expanded = !expanded;
+        body.replaceChildren(expanded ? quote(0, toks.length) : quote(start, end));
+        btn.textContent = expanded ? "Show less" : "Show the full " + (isQuran ? "verse" : "passage");
+      });
+      card.append(btn);
+    }
+    return card;
+  }
+
+  function corpusSection(c, d) {
+    var isQuran = c.name === "quran", f = collectForms(d);
+    var ranked = KS.rank(KS.findMatches(c.index, f.forms, f.exact, f.verbForms, f.exactIsVerb), c.index);
+    var order = diverse(ranked, function (u) { return isQuran ? quranRef(c, u).surah : c.data.p[u][0] + c.data.p[u][1]; });
+    var noun = isQuran ? "verse" : "passage";
+    var sec = el("section", { "class": "sec" }, el("h2", { text: isQuran ? "In the Quran" : "In Nahj al-Balagha" }));
+    if (!order.length) {
+      sec.append(el("p", { "class": "none", text: "No " + noun + " found containing this word or its forms." }));
+    } else {
+      sec.append(el("p", { "class": "tsum", text: "Found in " + order.length + " " + noun + (order.length === 1 ? "" : "s") + ". Matches are found by spelling, so a highlighted word can occasionally be a different word with the same letters." }));
+      var list = el("div"), shown = 0, more = el("button", { "class": "btn ghost", type: "button", text: "Show more" });
+      var showNext = function () {
+        order.slice(shown, shown + 3).forEach(function (m) { list.append(textCard(c, m)); });
+        shown += 3;
+        more.hidden = shown >= order.length;
+      };
+      more.addEventListener("click", showNext);
+      showNext();
+      sec.append(list, more);
+    }
+    if (isQuran) sec.append(el("p", { "class": "credit" }, "Text: ", el("a", { href: "https://tanzil.net", target: "_blank", rel: "noopener", text: "Tanzil Project (tanzil.net)" }), ", Uthmani, version 1.1 (CC BY 3.0). The text is shown unchanged."));
+    else sec.append(el("p", { "class": "credit", text: "Arabic text from the Alhassanain Network edition of Nahj al-Balagha, compiled by ash-Sharif ar-Radi. Numbering follows that edition." }));
+    return sec;
+  }
+
+  function textSections(d) {
+    var box = el("div", null, el("p", { "class": "muted", text: "Searching the Quran and Nahj al-Balagha…" }));
+    Promise.all([loadCorpus("quran"), loadCorpus("nahj")]).then(function (cs) {
+      box.replaceChildren(corpusSection(cs[0], d), corpusSection(cs[1], d));
+    }).catch(function () {
+      box.replaceChildren(el("p", { "class": "muted", text: "The Quran and Nahj al-Balagha texts couldn't be loaded. They download once, so check your connection and look the word up again." }));
+    });
+    return box;
+  }
+
+  /* ---------- saved view ---------- */
+  function shortMeaning(d) {
+    var m = (d && d.meaning && d.meaning.en) || "";
+    var s = String(m).split(/[;\n]|\.\s/)[0].replace(/\s*\([^)]*\)\s*/g, " ").trim();
+    return s.length > 70 ? s.slice(0, 67) + "…" : s;
+  }
+
+  function renderSaved() {
+    var box = $("#savedList"); box.replaceChildren();
+    if (!saved.length) { box.append(el("p", { "class": "muted", text: "No saved words yet. After a lookup, tap Save word to keep it here." })); return; }
+    var q = norm(filterEl.value.trim());
+    var rows = saved.filter(function (s) {
+      if (!q) return true;
+      var d = s.data || {}, m = d.meaning || {};
+      return norm([s.id, d.transliteration, m.en].concat(allMeanings(d)).join(" ")).indexOf(q) >= 0;
+    });
+    if (!rows.length) { box.append(el("p", { "class": "muted", text: "No saved words match that filter." })); return; }
+    rows.forEach(function (s) {
+      var d = s.data || {};
+      var gl = el("span", { "class": "sgl" });
+      if (d.transliteration) gl.append(el("span", { "class": "translit", text: d.transliteration + (d.partOfSpeech ? " · " + d.partOfSpeech : "") }));
+      gl.append(el("span", { text: shortMeaning(d) }));
+      if (trMeaning(d)) gl.append(tx(shortTx(trMeaning(d))));
+      var main = el("button", { "class": "smain", type: "button", onclick: function () { openSaved(s); } }, gl, ar(d.word || s.id, "sw"));
+      var rm = el("button", { "class": "linkbtn", type: "button", text: "Remove" });
+      var armed = false, t;
+      rm.addEventListener("click", function () {
+        if (!armed) {
+          armed = true; rm.textContent = "Tap again to remove";
+          t = setTimeout(function () { armed = false; rm.textContent = "Remove"; }, 3000);
+        } else {
+          clearTimeout(t);
+          var i = saved.indexOf(s); if (i >= 0) saved.splice(i, 1);
+          persistSaved(); renderSaved();
         }
+      });
+      box.append(el("div", { "class": "srow" }, main, rm));
+    });
+  }
 
-        window.onclick = function(e) {
-            if (!e.target.closest('button')) {
-                var menus = document.querySelectorAll('[id$="-menu"]');
-                for (var i = 0; i < menus.length; i++) menus[i].classList.add('hidden');
-            }
-        };
+  function download(name, mime, text) {
+    var blob = new Blob([text], { type: mime });
+    var url = URL.createObjectURL(blob);
+    var a = el("a", { href: url, download: name });
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+  }
+  function today() { return new Date().toISOString().slice(0, 10); }
+  function csvCell(v) { v = String(v == null ? "" : v).replace(/\r?\n/g, " "); return '"' + v.replace(/"/g, '""') + '"'; }
 
-        function setMode(mode) {
-            lookupMode = mode;
-            document.getElementById('mode-label').innerText = mode.charAt(0).toUpperCase() + mode.slice(1);
+  function exportJson() {
+    if (!saved.length) { toast("Nothing to export yet."); return; }
+    download("kalima-backup-" + today() + ".json", "application/json",
+      JSON.stringify({ app: "kalima", version: 1, exported: new Date().toISOString(), words: saved }));
+  }
+  function tm(d, l) { return (d.trans && d.trans[l] && d.trans[l].meaning) || ""; }
+  function exportCsv() {
+    if (!saved.length) { toast("Nothing to export yet."); return; }
+    var head = ["Arabic", "Transliteration", "Root", "Part of speech", "Wazn", "English", "Urdu", "Persian", "Turkish", "Russian", "Arabic definition", "Example (Arabic)", "Example (English)"];
+    var rows = saved.map(function (s) {
+      var d = s.data || {}, m = d.meaning || {}, ex = (d.examples && d.examples[0]) || {};
+      return [d.word || s.id, d.transliteration, (d.root || []).join(" "), d.partOfSpeech, d.wazn && d.wazn.pattern, m.en, tm(d, "ur"), tm(d, "fa"), tm(d, "tr"), tm(d, "ru"), m.ar, ex.ar, ex.en].map(csvCell).join(",");
+    });
+    download("kalima-words-" + today() + ".csv", "text/csv;charset=utf-8", "\uFEFF" + [head.map(csvCell).join(",")].concat(rows).join("\r\n"));
+  }
+  async function importBackup(file) {
+    try {
+      var j = JSON.parse(await file.text());
+      var words = Array.isArray(j) ? j : j.words;
+      if (!Array.isArray(words)) throw new Error("bad");
+      var added = 0;
+      words.forEach(function (w) {
+        if (w && w.id && w.data && typeof w.data === "object" && !findSaved(String(w.id))) {
+          saved.push({ id: String(w.id), added: w.added || Date.now(), box: w.box || 0, due: w.due || 0, data: migrateData(w.data) });
+          added++;
         }
+      });
+      if (!persistSaved()) toast("Couldn't store the imported words: storage is full.");
+      else toast("Imported " + added + " new word" + (added === 1 ? "" : "s") + ".");
+      renderSaved();
+    } catch (e) { toast("That file isn't a Kalima backup."); }
+  }
 
-        function setLang(lang) {
-            currentLang = lang;
-            document.getElementById('lang-label').innerText = langNames[lang] || 'Off';
-        }
+  /* ---------- practice ---------- */
+  var pr = { mode: "flash", queue: [], i: 0, flipped: false, reviewed: 0, qs: [], qi: 0, score: 0 };
 
-        function clearSearch() {
-            document.getElementById('query-input').value = '';
-            currentResult = null;
-            render();
-        }
+  function dueList(all) {
+    var now = Date.now();
+    return shuffle(saved.filter(function (s) { return all || (s.due || 0) <= now; }));
+  }
+  function grade(s, ok) {
+    if (ok) { s.box = Math.min((s.box || 0) + 1, 5); s.due = Date.now() + INTERVALS[s.box] * 86400000; }
+    else { s.box = 0; s.due = Date.now(); }
+    persistSaved();
+  }
 
-        function toggleSave() {
-            if (!currentResult) return;
-            var index = -1;
-            for (var i = 0; i < savedEntries.length; i++) {
-                if (savedEntries[i].id === currentResult.word) { index = i; break; }
-            }
-            if (index > -1) {
-                savedEntries.splice(index, 1);
-            } else {
-                savedEntries.unshift({ id: currentResult.word, data: currentResult, addedAt: Date.now() });
-            }
-            localStorage.setItem('kalima_saved', JSON.stringify(savedEntries));
-            render();
-        }
+  function renderPractice() {
+    var root = $("#practice"); root.replaceChildren();
+    if (!saved.length) {
+      root.append(el("p", { "class": "muted", text: "Save some words first, then practice them here." }),
+        el("p", null, el("button", { "class": "btn solid", type: "button", text: "Go to Lookup", onclick: function () { showTab("lookup"); } })));
+      return;
+    }
+    var due = dueList(false).length;
+    root.append(el("p", { "class": "pstats", text: saved.length + " saved · " + due + " due now" }));
+    var modes = el("div", { "class": "pmodes" });
+    [["flash", "Flashcards"], ["quiz", "Quiz"]].forEach(function (m) {
+      modes.append(el("button", { "class": "seg", type: "button", text: m[1], "aria-pressed": pr.mode === m[0] ? "true" : "false",
+        onclick: function () { pr.mode = m[0]; renderPractice(); } }));
+    });
+    root.append(modes);
+    var body = el("div"); root.append(body);
+    if (pr.mode === "flash") flashStart(body, false); else quizStart(body);
+  }
 
-        function speak(text) {
-            if ('speechSynthesis' in window) {
-                var utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'ar';
-                window.speechSynthesis.speak(utterance);
-            }
-        }
+  function flashStart(body, all) {
+    var q = dueList(all);
+    if (!q.length) {
+      body.append(el("p", { "class": "muted", text: "Nothing is due right now. Come back later, or practice everything anyway." }),
+        el("p", null, el("button", { "class": "btn solid", type: "button", text: "Practice all words",
+          onclick: function () { body.replaceChildren(); flashStart(body, true); } })));
+      return;
+    }
+    pr.queue = q; pr.i = 0; pr.flipped = false; pr.reviewed = 0;
+    flashShow(body);
+  }
 
-        async function handleLookup() {
-            var query = document.getElementById('query-input').value.trim();
-            if (!query) return;
-            if (!apiKey) {
-                alert("Please configure your Gemini API key in Settings first.");
-                switchTab('settings');
-                return;
-            }
+  function flashShow(body) {
+    body.replaceChildren();
+    if (pr.i >= pr.queue.length) {
+      body.append(el("p", { "class": "pdone", text: "Session finished. You reviewed " + pr.reviewed + " word" + (pr.reviewed === 1 ? "" : "s") + "." }),
+        el("button", { "class": "btn solid", type: "button", text: "Start again", onclick: function () { renderPractice(); } }));
+      return;
+    }
+    var s = pr.queue[pr.i], d = s.data || {}, m = d.meaning || {};
+    body.append(el("p", { "class": "pprog", text: "Card " + (pr.i + 1) + " of " + pr.queue.length }));
+    var card;
+    if (!pr.flipped) {
+      card = el("button", { "class": "fcard", type: "button", onclick: function () { pr.flipped = true; flashShow(body); } },
+        ar(d.word || s.id, "fword"), el("span", { "class": "fhint", text: "Tap the card to see the meaning" }));
+    } else {
+      var ex = (d.examples && d.examples[0]) || null;
+      card = el("button", { "class": "fcard", type: "button", onclick: function () { pr.flipped = false; flashShow(body); } },
+        ar(d.word || s.id, "fword small"),
+        d.transliteration ? el("span", { "class": "fhint", text: d.transliteration + (Array.isArray(d.root) && d.root.length ? " · root " + d.root.join(" ") : "") }) : null,
+        el("span", { "class": "fmean", text: m.en || "" }),
+        trMeaning(d) ? tx(trMeaning(d), "fx") : null,
+        ex ? ar(ex.ar, "fex") : null,
+        ex ? el("span", { "class": "fexen", text: ex.en || "" }) : null);
+    }
+    body.append(card);
+    var row = el("div", { "class": "prow" }, speakBtn(d.word || s.id, "Listen"));
+    if (pr.flipped) {
+      row.append(
+        el("button", { "class": "btn again", type: "button", text: "Again", onclick: function () {
+          grade(s, false); pr.queue.push(s); pr.reviewed++; pr.i++; pr.flipped = false; flashShow(body); } }),
+        el("button", { "class": "btn", type: "button", text: "Got it", onclick: function () {
+          grade(s, true); pr.reviewed++; pr.i++; pr.flipped = false; flashShow(body); } }));
+    }
+    body.append(row);
+  }
 
-            renderLoading(true);
+  function quizStart(body) {
+    if (saved.length < 2) { body.append(el("p", { "class": "muted", text: "Save at least 2 words to take a quiz." })); return; }
+    var pool = shuffle(saved.slice());
+    pr.qs = pool.slice(0, Math.min(10, pool.length)); pr.qi = 0; pr.score = 0;
+    quizShow(body);
+  }
 
-            try {
-                var isArabic = /[\u0600-\u06FF]/.test(query);
-                var prompt = "";
-                
-                if (isArabic) {
-                    prompt = "Analyze this Arabic word: " + query + ". Return ONLY one JSON object: {\"word\": \"...\", \"transliteration\": \"...\", \"partOfSpeech\": \"...\", \"grammarNote\": \"...\", \"root\": [...], \"rootGloss\": \"...\", \"wazn\": {\"pattern\": \"...\", \"note\": \"...\"}, \"meaning\": {\"en\": \"...\", \"ar\": \"...\"}, \"examples\": [{\"ar\": \"...\", \"en\": \"...\"}], \"forms\": [...], \"verb\": " + (lookupMode === 'fast' ? 'null' : '{...}') + ", \"synonyms\": [...], \"antonyms\": [...], \"note\": \"...\"}";
-                } else {
-                    prompt = "Translate \"" + query + "\" into 3-6 accurate Modern Standard Arabic words. Return ONLY JSON: {\"options\": [{\"ar\": \"...\", \"en\": \"...\"}]}";
-                }
+  function quizShow(body) {
+    body.replaceChildren();
+    if (pr.qi >= pr.qs.length) {
+      body.append(el("p", { "class": "pdone", text: "Score: " + pr.score + " out of " + pr.qs.length }),
+        el("button", { "class": "btn solid", type: "button", text: "New quiz", onclick: function () { renderPractice(); } }));
+      return;
+    }
+    var s = pr.qs[pr.qi], toEn = Math.random() < 0.5;
+    var others = shuffle(saved.filter(function (x) { return x !== s; })).slice(0, 3);
+    var options = shuffle([s].concat(others));
+    body.append(el("p", { "class": "pprog", text: "Question " + (pr.qi + 1) + " of " + pr.qs.length }));
+    var prompt;
+    if (toEn) {
+      prompt = el("div", { "class": "qprompt" }, ar(s.data.word || s.id, "fword"), el("span", { "class": "qtext", text: "What does this mean?" }));
+    } else {
+      prompt = el("div", { "class": "qprompt" },
+        el("span", { "class": "qtext", text: shortMeaning(s.data) }),
+        trMeaning(s.data) ? el("div", null, tx(shortTx(trMeaning(s.data)))) : null,
+        el("p", { "class": "muted", text: "Which Arabic word is this?" }));
+    }
+    body.append(prompt);
+    var next = el("div", { "class": "prow" });
+    var answered = false, btns = [];
+    options.forEach(function (o) {
+      var b = el("button", { "class": "opt" + (toEn ? "" : " arabic"), type: "button",
+        text: toEn ? shortMeaning(o.data) : (o.data.word || o.id) });
+      if (!toEn) { b.setAttribute("lang", "ar"); b.setAttribute("dir", "rtl"); }
+      b.addEventListener("click", function () {
+        if (answered) return;
+        answered = true;
+        var ok = o === s;
+        if (ok) pr.score++;
+        grade(s, ok);
+        btns.forEach(function (x) {
+          if (x.o === s) x.b.classList.add("ok");
+          else if (x.b === b) x.b.classList.add("bad");
+        });
+        next.append(el("button", { "class": "btn", type: "button", text: pr.qi + 1 >= pr.qs.length ? "See score" : "Next",
+          onclick: function () { pr.qi++; quizShow(body); } }));
+      });
+      btns.push({ b: b, o: o });
+      body.append(b);
+    });
+    body.append(next);
+  }
 
-                var res = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + apiKey, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                });
+  /* ---------- wiring ---------- */
+  goBtn.addEventListener("click", run);
+  input.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); run(); } });
+  filterEl.addEventListener("input", renderSaved);
+  $("#expJson").addEventListener("click", exportJson);
+  $("#expCsv").addEventListener("click", exportCsv);
+  $("#impBtn").addEventListener("click", function () { $("#impFile").click(); });
+  $("#impFile").addEventListener("change", function (e) { var f = e.target.files[0]; if (f) importBackup(f); e.target.value = ""; });
 
-                var data = await res.json();
-                var text = data.candidates[0].content.parts[0].text;
-                text = text.replace(/```json/g, '').replace(/```/g, '').trim();
-                var parsed = JSON.parse(text);
+  function applyAccessUI() {
+    $("#accessPick").hidden = !PROXY;
+    $("#sharedBlock").hidden = !useShared();
+    $("#ownBlock").hidden = useShared();
+    document.querySelectorAll(".seg[data-access]").forEach(function (b) {
+      b.setAttribute("aria-pressed", (b.dataset.access === (useShared() ? "shared" : "own")) ? "true" : "false");
+    });
+  }
+  function refreshKeyState() {
+    keyStateEl.textContent = getKey() ? "Key saved on this device." : "No key yet.";
+    $("#passstate").textContent = getPass() ? "Passcode saved on this device." : "No passcode yet.";
+    modelEl.value = getModel();
+    applyAccessUI();
+  }
+  document.querySelectorAll(".seg[data-access]").forEach(function (b) {
+    b.addEventListener("click", function () { prefs.access = b.dataset.access; setJSON(PREF_KEY, prefs); refreshKeyState(); });
+  });
+  $("#savepass").addEventListener("click", function () {
+    var p = $("#pass").value.trim();
+    if (p) { memPass = p; if (!writeStore(PASS_STORE, p)) $("#passstate").textContent = "Saved for this session only."; }
+    $("#pass").value = "";
+    refreshKeyState();
+    setStatus(null);
+  });
+  $("#clearpass").addEventListener("click", function () { memPass = ""; writeStore(PASS_STORE, ""); $("#pass").value = ""; refreshKeyState(); });
+  $("#savekey").addEventListener("click", function () {
+    var k = keyEl.value.trim(), m = modelEl.value.trim() || DEFAULT_MODEL;
+    if (k) memKey = k;
+    memModel = m;
+    var ok = true;
+    if (k) ok = writeStore(KEY_STORE, k) && ok;
+    ok = writeStore(MODEL_STORE, m === DEFAULT_MODEL ? "" : m) && ok;
+    keyEl.value = "";
+    refreshKeyState();
+    if (!ok) keyStateEl.textContent = "Saved for this session only. Your browser blocked saving.";
+    setStatus(null);
+    toast("Settings saved.");
+  });
+  $("#clearkey").addEventListener("click", function () {
+    memKey = ""; writeStore(KEY_STORE, ""); keyEl.value = ""; refreshKeyState();
+  });
 
-                if (parsed.options) {
-                    renderTranslations(query, parsed.options);
-                } else {
-                    currentResult = parsed;
-                    render();
-                }
-            } catch (err) {
-                alert("Network error or invalid API key.");
-                console.error(err);
-            } finally {
-                renderLoading(false);
-            }
-        }
+  function rerenderAll() {
+    if (currentData && !$("#view-lookup").hidden) renderResult(currentData);
+    else if (lastReverse && !$("#view-lookup").hidden) renderReverse(lastReverse.d, lastReverse.q, lastReverse.lang);
+    if (!$("#view-saved").hidden) renderSaved();
+    if (!$("#view-practice").hidden) renderPractice();
+  }
+  function syncPickers() {
+    document.querySelectorAll(".seg[data-lang]").forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.lang === prefs.lang ? "true" : "false"); });
+    document.querySelectorAll(".seg[data-theme]").forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.theme === prefs.theme ? "true" : "false"); });
+    $("#dock-btn-lang").textContent = prefs.lang === 'off' ? 'Off' : LANGS[prefs.lang].native;
+  }
+  document.querySelectorAll(".seg[data-lang]").forEach(function (b) {
+    b.addEventListener("click", function () { window.setGlobalLang(b.dataset.lang); });
+  });
+  document.querySelectorAll(".seg[data-theme]").forEach(function (b) {
+    b.addEventListener("click", function () { prefs.theme = b.dataset.theme; setJSON(PREF_KEY, prefs); applyTheme(); syncPickers(); });
+  });
+  syncPickers();
+  applyTheme();
 
-        function renderLoading(isLoading) {
-            var container = document.getElementById('app-content');
-            if (isLoading) {
-                container.innerHTML = '<div class="flex items-center justify-center h-64 gap-3 text-brand-amber"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-amber"></div><span>جارٍ التحليل...</span></div>';
-            }
-        }
+  refreshKeyState();
+})();
 
-        function renderTranslations(query, options) {
-            var container = document.getElementById('app-content');
-            var html = '<h2 class="text-xl font-bold mb-4">نتائج الترجمة لـ "' + query + '"</h2><div class="space-y-3">';
-            for (var i = 0; i < options.length; i++) {
-                var opt = options[i];
-                html += '<div onclick="selectTranslation(\'' + opt.ar + '\')" class="bg-brand-surface border border-brand-line p-4 rounded-xl cursor-pointer hover:border-brand-amber transition flex justify-between items-center">' +
-                    '<div><p class="font-medium">' + (opt.en || '') + '</p></div>' +
-                    '<p class="text-2xl font-bold text-right font-serif" dir="rtl">' + opt.ar + '</p>' +
-                '</div>';
-            }
-            html += '</div>';
-            container.innerHTML = html;
-        }
-
-        function selectTranslation(word) {
-            document.getElementById('query-input').value = word;
-            handleLookup();
-        }
-
-        function render() {
-            var container = document.getElementById('app-content');
-            
-            var saveBtn = document.getElementById('btn-save');
-            var isSaved = currentResult && savedEntries.some(function(e) { return e.id === currentResult.word; });
-            if (isSaved) {
-                saveBtn.innerText = "Saved ✓";
-                saveBtn.className = "bg-brand-amber text-black px-4 py-1.5 rounded-full font-semibold transition";
-            } else {
-                saveBtn.innerText = "Save";
-                saveBtn.className = "bg-brand-variant text-brand-muted px-4 py-1.5 rounded-full font-semibold transition hover:text-white";
-            }
-
-            if (currentTab === 'lookup') {
-                if (currentResult) {
-                    container.innerHTML = renderResultHTML(currentResult);
-                } else {
-                    var suggestions = ["كِتَابَةٌ", "مَدْرَسَة", "سَعِيد", "يَسْتَخْدِمُونَ"];
-                    var sug = suggestions[Math.floor(Math.random() * suggestions.length)];
-                    container.innerHTML = 
-                        '<div onclick="document.getElementById(\'query-input\').value=\'' + sug + '\'; handleLookup();" class="bg-brand-surface border border-brand-line rounded-3xl p-8 text-center cursor-pointer hover:border-brand-amber transition shadow-lg">' +
-                            '<p class="text-brand-muted text-sm mb-4">كلمة مقترحة</p>' +
-                            '<h2 class="text-6xl font-serif font-bold mb-4" dir="rtl">' + sug + '</h2>' +
-                            '<p class="text-brand-amber text-sm font-medium">اضغط للبحث والتحليل</p>' +
-                        '</div>';
-                }
-            } else if (currentTab === 'saved') {
-                var html = '<h2 class="text-2xl font-bold mb-4">الكلمات المحفوظة (' + savedEntries.length + ')</h2>';
-                if (savedEntries.length === 0) {
-                    html += '<p class="text-brand-muted">لا توجد كلمات محفوظة بعد.</p>';
-                } else {
-                    html += '<div class="space-y-3">';
-                    for (var i = 0; i < savedEntries.length; i++) {
-                        var entry = savedEntries[i];
-                        html += '<div onclick=\'openSaved(' + JSON.stringify(entry.data) + ')\' class="bg-brand-surface border border-brand-line p-4 rounded-xl cursor-pointer hover:border-brand-amber transition flex justify-between items-center">' +
-                            '<span class="text-brand-muted text-sm">' + new Date(entry.addedAt).toLocaleDateString() + '</span>' +
-                            '<span class="text-2xl font-serif font-bold" dir="rtl">' + entry.id + '</span>' +
-                        '</div>';
-                    }
-                    html += '</div>';
-                }
-                container.innerHTML = html;
-            } else if (currentTab === 'practice') {
-                container.innerHTML = '<h2 class="text-2xl font-bold mb-4">التمارين والبطاقات</h2><p class="text-brand-muted">ميزة التمارين قيد التفعيل.</p>';
-            } else if (currentTab === 'settings') {
-                container.innerHTML = 
-                    '<div class="space-y-6">' +
-                        '<h2 class="text-3xl font-bold text-brand-amber">الإعدادات</h2>' +
-                        '<div>' +
-                            '<label class="block text-sm text-brand-muted mb-2">مفتاح Gemini API</label>' +
-                            '<input type="password" id="setting-key" value="' + apiKey + '" class="w-full bg-brand-surface border border-brand-line rounded-xl p-3 text-white focus:outline-none focus:border-brand-amber">' +
-                        '</div>' +
-                        '<button onclick="saveSettings()" class="w-full bg-brand-amber text-black font-bold p-3 rounded-xl">حفظ الإعدادات</button>' +
-                        '<hr class="border-brand-line">' +
-                        '<div>' +
-                            '<h3 class="text-lg font-bold mb-2">النسخ الاحتياطي</h3>' +
-                            '<button onclick="exportData()" class="w-full border border-brand-amber text-brand-amber font-bold p-3 rounded-xl">تصدير الكلمات المحفوظة (JSON)</button>' +
-                        '</div>' +
-                    '</div>';
-            }
-        }
-
-        function openSaved(data) {
-            currentResult = data;
-            currentTab = 'lookup';
-            switchTab('lookup');
-        }
-
-        function saveSettings() {
-            apiKey = document.getElementById('setting-key').value.trim();
-            localStorage.setItem('kalima_key', apiKey);
-            alert("تم الحفظ بنجاح!");
-            switchTab('lookup');
-        }
-
-        function exportData() {
-            var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(savedEntries, null, 2));
-            var dlAnchor = document.createElement('a');
-            dlAnchor.setAttribute("href", dataStr);
-            dlAnchor.setAttribute("download", "Kalima_Backup.json");
-            document.body.appendChild(dlAnchor);
-            dlAnchor.click();
-            dlAnchor.remove();
-        }
-
-        function renderResultHTML(w) {
-            var rootHTML = '';
-            if (w.root && w.root.length > 0) {
-                rootHTML = '<div class="flex gap-2 justify-end" dir="rtl">';
-                for (var i = 0; i < w.root.length; i++) {
-                    rootHTML += '<div class="w-12 h-14 bg-brand-amber text-black rounded-xl flex items-center justify-center text-2xl font-bold">' + w.root[i] + '</div>';
-                }
-                rootHTML += '</div>';
-            }
-
-            var verbHTML = '';
-            if (w.verb && w.verb.conjugation) {
-                var rows = '';
-                for (var i = 0; i < 14; i++) {
-                    var conjItem = w.verb.conjugation[i] || {};
-                    rows += '<tr class="border-t border-brand-line">' +
-                        '<td class="p-2 text-right font-serif" dir="rtl">' + (conjItem.present || '—') + '</td>' +
-                        '<td class="p-2 text-right font-serif" dir="rtl">' + (conjItem.past || '—') + '</td>' +
-                        '<td class="p-2 text-right text-xs text-brand-muted">' + pronouns[i] + '</td>' +
-                    '</tr>';
-                }
-                verbHTML = 
-                    '<div class="mt-6">' +
-                        '<h3 class="text-lg font-semibold text-brand-amber mb-3">التصريف (14 صيغة)</h3>' +
-                        '<div class="overflow-x-auto bg-brand-surface rounded-xl border border-brand-line">' +
-                            '<table class="w-full text-sm">' +
-                                '<thead class="bg-brand-variant text-brand-muted text-xs">' +
-                                    '<tr><th class="p-2 text-right">المضارع</th><th class="p-2 text-right">الماضي</th><th class="p-2 text-right">الضمير</th></tr>' +
-                                '</thead>' +
-                                '<tbody>' + rows + '</tbody>' +
-                            '</table>' +
-                        '</div>' +
-                    '</div>';
-            }
-
-            return '<div class="bg-brand-surface border border-brand-line rounded-3xl p-6 space-y-6 shadow-xl">' +
-                '<div class="flex justify-between items-start">' +
-                    '<div>' +
-                        '<p class="text-sm text-brand-muted">الجذر</p>' +
-                        '<p class="font-medium">' + (w.rootGloss || '') + '</p>' +
-                    '</div>' +
-                    rootHTML +
-                '</div>' +
-                '<hr class="border-brand-line">' +
-                '<div class="text-right">' +
-                    '<div class="flex items-center justify-end gap-3 mb-2">' +
-                        '<button onclick="speak(\'' + w.word + '\')" class="border border-brand-amber text-brand-amber p-2 rounded-xl text-sm">🔊 استماع</button>' +
-                        '<h1 class="text-5xl font-serif font-bold" dir="rtl">' + w.word + '</h1>' +
-                    '</div>' +
-                    '<p class="text-brand-muted italic">' + (w.transliteration || '') + '</p>' +
-                '</div>' +
-                '<div>' +
-                    '<h3 class="text-lg font-semibold text-brand-amber mb-1">المعنى</h3>' +
-                    '<p class="text-lg">' + w.meaning.en + '</p>' +
-                    '<p class="text-xl font-serif mt-2 text-right" dir="rtl">' + w.meaning.ar + '</p>' +
-                '</div>' +
-                (w.examples && w.examples.length ? '<div><h3 class="text-lg font-semibold text-brand-amber mb-2">أمثلة</h3>' + w.examples.map(function(ex){ return '<div class="bg-brand-variant p-3 rounded-xl mb-2 text-right"><p class="font-serif text-lg" dir="rtl">' + ex.ar + '</p><p class="text-sm text-brand-muted">' + ex.en + '</p></div>'; }).join('') + '</div>' : '') +
-                verbHTML +
-            '</div>';
-        }
-
-        render();
-    </script>
+if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
+  window.addEventListener("load", function () {
+    try {
+      var hadController = !!navigator.serviceWorker.controller, reloaded = false;
+      navigator.serviceWorker.addEventListener("controllerchange", function () {
+        if (hadController && !reloaded) { reloaded = true; location.reload(); }
+      });
+      navigator.serviceWorker.register("sw.js").then(function (reg) { reg.update(); }).catch(function () {});
+    } catch (e) {}
+  });
+}
+</script>
 </body>
 </html>
