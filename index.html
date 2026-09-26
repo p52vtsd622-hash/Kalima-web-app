@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>كَلِمَة - Kalima Arabic Morphology</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -25,17 +25,18 @@
         }
     </script>
 </head>
-<body class="bg-black text-white min-h-screen flex flex-col justify-between select-none font-sans antialiased">
+<body class="bg-black text-white min-h-screen flex flex-col justify-between font-sans antialiased selection:bg-brand-amber selection:text-black">
 
-    <!-- Main Content Area -->
-    <main id="app-content" class="flex-1 max-w-2xl w-full mx-auto p-4 pb-32 overflow-y-auto">
-        <!-- Dynamic views injected here -->
+    <!-- Main Content Container -->
+    <main id="app-content" class="flex-1 max-w-2xl w-full mx-auto p-4 pb-48 overflow-y-auto">
+        <!-- Dynamic Views Injected Here -->
     </main>
 
-    <!-- Bottom Fixed Control & Navigation Bar -->
-    <footer class="fixed bottom-0 left-0 right-0 bg-black/90 backdrop-blur border-t border-brand-line z-50 max-w-2xl mx-auto">
+    <!-- Bottom Fixed Control & Navigation Bar (Matches Android Mockup) -->
+    <footer class="fixed bottom-0 left-0 right-0 bg-black/95 backdrop-blur border-t border-brand-line z-50 max-w-2xl mx-auto">
         <div class="p-3 space-y-3">
-            <!-- Action Toggles Row -->
+            
+            <!-- Action Toggles Row: Save, Mode, Language -->
             <div class="flex justify-between items-center text-sm">
                 <button id="btn-save" onclick="toggleSave()" class="bg-brand-variant text-brand-muted px-4 py-1.5 rounded-full font-semibold transition hover:text-white">Save</button>
                 
@@ -52,7 +53,7 @@
                 <div class="relative">
                     <button onclick="toggleDropdown('lang-menu')" id="lang-label" class="bg-brand-variant text-white px-4 py-1.5 rounded-full font-semibold">Off</button>
                     <div id="lang-menu" class="hidden absolute bottom-full mb-2 right-0 bg-brand-surface border border-brand-line rounded-xl shadow-xl overflow-hidden w-36 py-1 z-50">
-                        <button onclick="setLang('off')" class="w-full text-right px-4 py-2 hover:bg-brand-variant text-white">Off (English)</button>
+                        <button onclick="setLang('off')" class="w-full text-right px-4 py-2 hover:bg-brand-variant text-white">Off</button>
                         <button onclick="setLang('ur')" class="w-full text-right px-4 py-2 hover:bg-brand-variant text-white">Urdu</button>
                         <button onclick="setLang('fa')" class="w-full text-right px-4 py-2 hover:bg-brand-variant text-white">Farsi</button>
                         <button onclick="setLang('tr')" class="w-full text-right px-4 py-2 hover:bg-brand-variant text-white">Turkish</button>
@@ -68,7 +69,7 @@
                 <button onclick="handleLookup()" class="bg-brand-amber text-black w-10 h-10 rounded-full flex items-center justify-center font-bold shrink-0">➔</button>
             </div>
 
-            <!-- Bottom Navigation Bar -->
+            <!-- Bottom Navigation Bar (ك, 💾, 🧠, ⚙️) -->
             <div class="flex justify-between items-center px-4 pt-1">
                 <button onclick="switchTab('lookup')" id="nav-lookup" class="w-12 h-12 rounded-xl flex items-center justify-center text-xl font-bold bg-brand-amber text-black">ك</button>
                 <button onclick="switchTab('saved')" id="nav-saved" class="w-12 h-12 rounded-xl flex items-center justify-center text-xl font-bold text-brand-muted hover:text-white">💾</button>
@@ -80,41 +81,48 @@
 
     <!-- App Logic Script -->
     <script>
-        let currentTab = 'lookup';
-        let lookupMode = 'deep';
-        let currentLang = 'off';
-        let currentResult = null;
-        let savedEntries = JSON.parse(localStorage.getItem('kalima_saved') || '[]');
-        let apiKey = localStorage.getItem('kalima_key') || '';
+        var currentTab = 'lookup';
+        var lookupMode = 'deep';
+        var currentLang = 'off';
+        var currentResult = null;
+        var savedEntries = JSON.parse(localStorage.getItem('kalima_saved') || '[]');
+        var apiKey = localStorage.getItem('kalima_key') || '';
 
-        const pronouns = [
+        var pronouns = [
             "هُوَ", "هُمَا (masc. dual)", "هُمْ", "هِيَ", "هُمَا (fem. dual)", "هُنَّ",
             "أَنْتَ", "أَنْتُمَا (masc.)", "أَنْتُمْ", "أَنْتِ", "أَنْتُمَا (fem.)", "أَنْتُنَّ", "أَنَا", "نَحْنُ"
         ];
+        var langNames = { ur: 'Urdu', fa: 'Farsi', tr: 'Turkish', ru: 'Russian', off: 'Off' };
 
         function switchTab(tab) {
             currentTab = tab;
-            ['lookup', 'saved', 'practice', 'settings'].forEach(t => {
-                const btn = document.getElementById(`nav-${t}`);
-                if(t === tab) {
+            var tabs = ['lookup', 'saved', 'practice', 'settings'];
+            for (var i = 0; i < tabs.length; i++) {
+                var t = tabs[i];
+                var btn = document.getElementById('nav-' + t);
+                if (t === tab) {
                     btn.className = "w-12 h-12 rounded-xl flex items-center justify-center text-xl font-bold bg-brand-amber text-black";
                 } else {
                     btn.className = "w-12 h-12 rounded-xl flex items-center justify-center text-xl font-bold text-brand-muted hover:text-white";
                 }
-            });
+            }
             render();
         }
 
         function toggleDropdown(id) {
-            document.querySelectorAll('[id$="-menu"]').forEach(m => { if(m.id !== id) m.classList.add('hidden'); });
+            var menus = document.querySelectorAll('[id$="-menu"]');
+            for (var i = 0; i < menus.length; i++) {
+                if (menus[i].id !== id) menus[i].classList.add('hidden');
+            }
             document.getElementById(id).classList.toggle('hidden');
         }
 
         window.onclick = function(e) {
             if (!e.target.closest('button')) {
-                document.querySelectorAll('[id$="-menu"]').forEach(m => m.classList.add('hidden'));
+                var menus = document.querySelectorAll('[id$="-menu"]');
+                for (var i = 0; i < menus.length; i++) menus[i].classList.add('hidden');
             }
-        }
+        };
 
         function setMode(mode) {
             lookupMode = mode;
@@ -123,8 +131,7 @@
 
         function setLang(lang) {
             currentLang = lang;
-            const names = { off: 'Off', ur: 'Urdu', fa: 'Farsi', tr: 'Turkish', ru: 'Russian' };
-            document.getElementById('lang-label').innerText = names[lang] || 'Off';
+            document.getElementById('lang-label').innerText = langNames[lang] || 'Off';
         }
 
         function clearSearch() {
@@ -135,7 +142,10 @@
 
         function toggleSave() {
             if (!currentResult) return;
-            const index = savedEntries.findIndex(e => e.id === currentResult.word);
+            var index = -1;
+            for (var i = 0; i < savedEntries.length; i++) {
+                if (savedEntries[i].id === currentResult.word) { index = i; break; }
+            }
             if (index > -1) {
                 savedEntries.splice(index, 1);
             } else {
@@ -147,17 +157,17 @@
 
         function speak(text) {
             if ('speechSynthesis' in window) {
-                const utterance = new SpeechSynthesisUtterance(text);
+                var utterance = new SpeechSynthesisUtterance(text);
                 utterance.lang = 'ar';
                 window.speechSynthesis.speak(utterance);
             }
         }
 
         async function handleLookup() {
-            const query = document.getElementById('query-input').value.trim();
+            var query = document.getElementById('query-input').value.trim();
             if (!query) return;
             if (!apiKey) {
-                alert("Please enter your Gemini API key in Settings first.");
+                alert("Please configure your Gemini API key in Settings first.");
                 switchTab('settings');
                 return;
             }
@@ -165,25 +175,25 @@
             renderLoading(true);
 
             try {
-                const isArabic = /[\u0600-\u06FF]/.test(query);
-                let prompt = "";
+                var isArabic = /[\u0600-\u06FF]/.test(query);
+                var prompt = "";
                 
                 if (isArabic) {
-                    prompt = `Analyze this Arabic word: ${query}. Return ONLY a JSON object with: word, transliteration, partOfSpeech, grammarNote, root (array), rootGloss, wazn {pattern, note}, meaning {en, ar}, examples [{ar, en}], forms, verb {form, pattern, dictionaryForm, presentForm, masdar, masdarWazn, conjugation: [{past, present, subjunctive, jussive, imperative, passivePast, passivePresent}]}, synonyms [{ar, en}], antonyms [{ar, en}], note. Fully vocalize all Arabic text.`;
+                    prompt = "Analyze this Arabic word: " + query + ". Return ONLY one JSON object: {\"word\": \"...\", \"transliteration\": \"...\", \"partOfSpeech\": \"...\", \"grammarNote\": \"...\", \"root\": [...], \"rootGloss\": \"...\", \"wazn\": {\"pattern\": \"...\", \"note\": \"...\"}, \"meaning\": {\"en\": \"...\", \"ar\": \"...\"}, \"examples\": [{\"ar\": \"...\", \"en\": \"...\"}], \"forms\": [...], \"verb\": " + (lookupMode === 'fast' ? 'null' : '{...}') + ", \"synonyms\": [...], \"antonyms\": [...], \"note\": \"...\"}";
                 } else {
-                    prompt = `Translate "${query}" into 3-6 accurate Modern Standard Arabic words. Return ONLY JSON: {"options": [{"ar": "...", "en": "..."}]}`;
+                    prompt = "Translate \"" + query + "\" into 3-6 accurate Modern Standard Arabic words. Return ONLY JSON: {\"options\": [{\"ar\": \"...\", \"en\": \"...\"}]}";
                 }
 
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                var res = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + apiKey, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
                 });
 
-                const data = await res.json();
-                let text = data.candidates[0].content.parts[0].text;
+                var data = await res.json();
+                var text = data.candidates[0].content.parts[0].text;
                 text = text.replace(/```json/g, '').replace(/```/g, '').trim();
-                const parsed = JSON.parse(text);
+                var parsed = JSON.parse(text);
 
                 if (parsed.options) {
                     renderTranslations(query, parsed.options);
@@ -192,7 +202,7 @@
                     render();
                 }
             } catch (err) {
-                alert("Something went wrong or API key is invalid.");
+                alert("Network error or invalid API key.");
                 console.error(err);
             } finally {
                 renderLoading(false);
@@ -200,22 +210,23 @@
         }
 
         function renderLoading(isLoading) {
-            const container = document.getElementById('app-content');
+            var container = document.getElementById('app-content');
             if (isLoading) {
-                container.innerHTML = `<div class="flex items-center justify-center h-64 gap-3 text-brand-amber"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-amber"></div><span>جارٍ التحليل...</span></div>`;
+                container.innerHTML = '<div class="flex items-center justify-center h-64 gap-3 text-brand-amber"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-amber"></div><span>جارٍ التحليل...</span></div>';
             }
         }
 
         function renderTranslations(query, options) {
-            const container = document.getElementById('app-content');
-            let html = `<h2 class="text-xl font-bold mb-4">نتائج الترجمة لـ "${query}"</h2><div class="space-y-3">`;
-            options.forEach(opt => {
-                html += `<div onclick="selectTranslation('${opt.ar}')" class="bg-brand-surface border border-brand-line p-4 rounded-xl cursor-pointer hover:border-brand-amber transition flex justify-between items-center">
-                    <div><p class="font-medium">${opt.en}</p></div>
-                    <p class="text-2xl font-bold text-right font-serif" dir="rtl">${opt.ar}</p>
-                </div>`;
-            });
-            html += `</div>`;
+            var container = document.getElementById('app-content');
+            var html = '<h2 class="text-xl font-bold mb-4">نتائج الترجمة لـ "' + query + '"</h2><div class="space-y-3">';
+            for (var i = 0; i < options.length; i++) {
+                var opt = options[i];
+                html += '<div onclick="selectTranslation(\'' + opt.ar + '\')" class="bg-brand-surface border border-brand-line p-4 rounded-xl cursor-pointer hover:border-brand-amber transition flex justify-between items-center">' +
+                    '<div><p class="font-medium">' + (opt.en || '') + '</p></div>' +
+                    '<p class="text-2xl font-bold text-right font-serif" dir="rtl">' + opt.ar + '</p>' +
+                '</div>';
+            }
+            html += '</div>';
             container.innerHTML = html;
         }
 
@@ -225,11 +236,11 @@
         }
 
         function render() {
-            const container = document.getElementById('app-content');
+            var container = document.getElementById('app-content');
             
-            // Update Save button state
-            const saveBtn = document.getElementById('btn-save');
-            if (currentResult && savedEntries.some(e => e.id === currentResult.word)) {
+            var saveBtn = document.getElementById('btn-save');
+            var isSaved = currentResult && savedEntries.some(function(e) { return e.id === currentResult.word; });
+            if (isSaved) {
                 saveBtn.innerText = "Saved ✓";
                 saveBtn.className = "bg-brand-amber text-black px-4 py-1.5 rounded-full font-semibold transition";
             } else {
@@ -241,49 +252,48 @@
                 if (currentResult) {
                     container.innerHTML = renderResultHTML(currentResult);
                 } else {
-                    const suggestions = ["كِتَابَةٌ", "مَدْرَسَة", "سَعِيد", "يَسْتَخْدِمُونَ"];
-                    const sug = suggestions[Math.floor(Math.random() * suggestions.length)];
-                    container.innerHTML = `
-                        <div onclick="document.getElementById('query-input').value='${sug}'; handleLookup();" class="bg-brand-surface border border-brand-line rounded-3xl p-8 text-center cursor-pointer hover:border-brand-amber transition shadow-lg">
-                            <p class="text-brand-muted text-sm mb-4">كلمة مقترحة</p>
-                            <h2 class="text-6xl font-serif font-bold mb-4" dir="rtl">${sug}</h2>
-                            <p class="text-brand-amber text-sm font-medium">اضغط للبحث والتحليل</p>
-                        </div>
-                    `;
+                    var suggestions = ["كِتَابَةٌ", "مَدْرَسَة", "سَعِيد", "يَسْتَخْدِمُونَ"];
+                    var sug = suggestions[Math.floor(Math.random() * suggestions.length)];
+                    container.innerHTML = 
+                        '<div onclick="document.getElementById(\'query-input\').value=\'' + sug + '\'; handleLookup();" class="bg-brand-surface border border-brand-line rounded-3xl p-8 text-center cursor-pointer hover:border-brand-amber transition shadow-lg">' +
+                            '<p class="text-brand-muted text-sm mb-4">كلمة مقترحة</p>' +
+                            '<h2 class="text-6xl font-serif font-bold mb-4" dir="rtl">' + sug + '</h2>' +
+                            '<p class="text-brand-amber text-sm font-medium">اضغط للبحث والتحليل</p>' +
+                        '</div>';
                 }
             } else if (currentTab === 'saved') {
-                let html = `<h2 class="text-2xl font-bold mb-4">الكلمات المحفوظة (${savedEntries.length})</h2>`;
+                var html = '<h2 class="text-2xl font-bold mb-4">الكلمات المحفوظة (' + savedEntries.length + ')</h2>';
                 if (savedEntries.length === 0) {
-                    html += `<p class="text-brand-muted">لا توجد كلمات محفوظة بعد.</p>`;
+                    html += '<p class="text-brand-muted">لا توجد كلمات محفوظة بعد.</p>';
                 } else {
-                    html += `<div class="space-y-3">`;
-                    savedEntries.forEach(entry => {
-                        html += `<div onclick='openSaved(${JSON.stringify(entry.data)})' class="bg-brand-surface border border-brand-line p-4 rounded-xl cursor-pointer hover:border-brand-amber transition flex justify-between items-center">
-                            <span class="text-brand-muted text-sm">${new Date(entry.addedAt).toLocaleDateString()}</span>
-                            <span class="text-2xl font-serif font-bold" dir="rtl">${entry.id}</span>
-                        </div>`;
-                    });
-                    html += `</div>`;
+                    html += '<div class="space-y-3">';
+                    for (var i = 0; i < savedEntries.length; i++) {
+                        var entry = savedEntries[i];
+                        html += '<div onclick=\'openSaved(' + JSON.stringify(entry.data) + ')\' class="bg-brand-surface border border-brand-line p-4 rounded-xl cursor-pointer hover:border-brand-amber transition flex justify-between items-center">' +
+                            '<span class="text-brand-muted text-sm">' + new Date(entry.addedAt).toLocaleDateString() + '</span>' +
+                            '<span class="text-2xl font-serif font-bold" dir="rtl">' + entry.id + '</span>' +
+                        '</div>';
+                    }
+                    html += '</div>';
                 }
                 container.innerHTML = html;
             } else if (currentTab === 'practice') {
-                container.innerHTML = `<h2 class="text-2xl font-bold mb-4">التمارين والبطاقات</h2><p class="text-brand-muted">قريباً في النسخة الويب الكاملة.</p>`;
+                container.innerHTML = '<h2 class="text-2xl font-bold mb-4">التمارين والبطاقات</h2><p class="text-brand-muted">ميزة التمارين قيد التفعيل.</p>';
             } else if (currentTab === 'settings') {
-                container.innerHTML = `
-                    <div class="space-y-6">
-                        <h2 class="text-3xl font-bold text-brand-amber">الإعدادات</h2>
-                        <div>
-                            <label class="block text-sm text-brand-muted mb-2">مفتاح Gemini API</label>
-                            <input type="password" id="setting-key" value="${apiKey}" class="w-full bg-brand-surface border border-brand-line rounded-xl p-3 text-white focus:outline-none focus:border-brand-amber">
-                        </div>
-                        <button onclick="saveSettings()" class="w-full bg-brand-amber text-black font-bold p-3 rounded-xl">حفظ الإعدادات</button>
-                        <hr class="border-brand-line">
-                        <div>
-                            <h3 class="text-lg font-bold mb-2">النسخ الاحتياطي</h3>
-                            <button onclick="exportData()" class="w-full border border-brand-amber text-brand-amber font-bold p-3 rounded-xl">تصدير الكلمات المحفوظة (JSON)</button>
-                        </div>
-                    </div>
-                `;
+                container.innerHTML = 
+                    '<div class="space-y-6">' +
+                        '<h2 class="text-3xl font-bold text-brand-amber">الإعدادات</h2>' +
+                        '<div>' +
+                            '<label class="block text-sm text-brand-muted mb-2">مفتاح Gemini API</label>' +
+                            '<input type="password" id="setting-key" value="' + apiKey + '" class="w-full bg-brand-surface border border-brand-line rounded-xl p-3 text-white focus:outline-none focus:border-brand-amber">' +
+                        '</div>' +
+                        '<button onclick="saveSettings()" class="w-full bg-brand-amber text-black font-bold p-3 rounded-xl">حفظ الإعدادات</button>' +
+                        '<hr class="border-brand-line">' +
+                        '<div>' +
+                            '<h3 class="text-lg font-bold mb-2">النسخ الاحتياطي</h3>' +
+                            '<button onclick="exportData()" class="w-full border border-brand-amber text-brand-amber font-bold p-3 rounded-xl">تصدير الكلمات المحفوظة (JSON)</button>' +
+                        '</div>' +
+                    '</div>';
             }
         }
 
@@ -301,8 +311,8 @@
         }
 
         function exportData() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(savedEntries, null, 2));
-            const dlAnchor = document.createElement('a');
+            var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(savedEntries, null, 2));
+            var dlAnchor = document.createElement('a');
             dlAnchor.setAttribute("href", dataStr);
             dlAnchor.setAttribute("download", "Kalima_Backup.json");
             document.body.appendChild(dlAnchor);
@@ -311,72 +321,67 @@
         }
 
         function renderResultHTML(w) {
-            let rootHTML = '';
+            var rootHTML = '';
             if (w.root && w.root.length > 0) {
-                rootHTML = `<div class="flex gap-2 justify-end" dir="rtl">` + w.root.map(l => `<div class="w-12 h-14 bg-brand-amber text-black rounded-xl flex items-center justify-center text-2xl font-bold">${l}</div>`).join('') + `</div>`;
-            }
-
-            let verbHTML = '';
-            if (w.verb) {
-                let rows = '';
-                for(let i=0; i<14; i++) {
-                    rows += `<tr class="border-t border-brand-line">
-                        <td class="p-2 text-right font-serif" dir="rtl">${w.verb.conjugation[i]?.present || '—'}</td>
-                        <td class="p-2 text-right font-serif" dir="rtl">${w.verb.conjugation[i]?.past || '—'}</td>
-                        <td class="p-2 text-right text-xs text-brand-muted">${pronouns[i]}</td>
-                    </tr>`;
+                rootHTML = '<div class="flex gap-2 justify-end" dir="rtl">';
+                for (var i = 0; i < w.root.length; i++) {
+                    rootHTML += '<div class="w-12 h-14 bg-brand-amber text-black rounded-xl flex items-center justify-center text-2xl font-bold">' + w.root[i] + '</div>';
                 }
-                verbHTML = `
-                    <div class="mt-6">
-                        <h3 class="text-lg font-semibold text-brand-amber mb-3">التصريف (14 صيغة)</h3>
-                        <div class="overflow-x-auto bg-brand-surface rounded-xl border border-brand-line">
-                            <table class="w-full text-sm">
-                                <thead class="bg-brand-variant text-brand-muted text-xs">
-                                    <tr><th class="p-2 text-right">المضارع</th><th class="p-2 text-right">الماضي</th><th class="p-2 text-right">الضمير</th></tr>
-                                </thead>
-                                <tbody>${rows}</tbody>
-                            </table>
-                        </div>
-                    </div>
-                `;
+                rootHTML += '</div>';
             }
 
-            return `
-                <div class="bg-brand-surface border border-brand-line rounded-3xl p-6 space-y-6 shadow-xl">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <p class="text-sm text-brand-muted">الجذر</p>
-                            <p class="font-medium">${w.rootGloss || ''}</p>
-                        </div>
-                        ${rootHTML}
-                    </div>
-                    <hr class="border-brand-line">
-                    <div class="text-right">
-                        <div class="flex items-center justify-end gap-3 mb-2">
-                            <button onclick="speak('${w.word}')" class="border border-brand-amber text-brand-amber p-2 rounded-xl text-sm">🔊 استماع</button>
-                            <h1 class="text-5xl font-serif font-bold" dir="rtl">${w.word}</h1>
-                        </div>
-                        <p class="text-brand-muted italic">${w.transliteration || ''}</p>
-                        <div class="flex gap-2 justify-end mt-3">
-                            ${w.grammarNote ? `<span class="text-xs text-brand-muted border border-brand-line px-3 py-1 rounded-full">${w.grammarNote}</span>` : ''}
-                            <span class="text-xs text-brand-amber border border-brand-amber px-3 py-1 rounded-full">${w.partOfSpeech}</span>
-                        </div>
-                    </div>
-                    <div>
-                        <h3 class="text-lg font-semibold text-brand-amber mb-1">المعنى</h3>
-                        <p class="text-lg">${w.meaning.en}</p>
-                        <p class="text-xl font-serif mt-2 text-right" dir="rtl">${w.meaning.ar}</p>
-                    </div>
-                    ${w.examples && w.examples.length ? `
-                        <div>
-                            <h3 class="text-lg font-semibold text-brand-amber mb-2">أمثلة</h3>
-                            ${w.examples.map(ex => `<div class="bg-brand-variant p-3 rounded-xl mb-2 text-right"><p class="font-serif text-lg" dir="rtl">${ex.ar}</p><p class="text-sm text-brand-muted">${ex.en}</p></div>`).join('')}
-                        </div>
-                    ` : ''}
-                    ${verbHTML}
-                </div>
-            `;
+            var verbHTML = '';
+            if (w.verb && w.verb.conjugation) {
+                var rows = '';
+                for (var i = 0; i < 14; i++) {
+                    var conjItem = w.verb.conjugation[i] || {};
+                    rows += '<tr class="border-t border-brand-line">' +
+                        '<td class="p-2 text-right font-serif" dir="rtl">' + (conjItem.present || '—') + '</td>' +
+                        '<td class="p-2 text-right font-serif" dir="rtl">' + (conjItem.past || '—') + '</td>' +
+                        '<td class="p-2 text-right text-xs text-brand-muted">' + pronouns[i] + '</td>' +
+                    '</tr>';
+                }
+                verbHTML = 
+                    '<div class="mt-6">' +
+                        '<h3 class="text-lg font-semibold text-brand-amber mb-3">التصريف (14 صيغة)</h3>' +
+                        '<div class="overflow-x-auto bg-brand-surface rounded-xl border border-brand-line">' +
+                            '<table class="w-full text-sm">' +
+                                '<thead class="bg-brand-variant text-brand-muted text-xs">' +
+                                    '<tr><th class="p-2 text-right">المضارع</th><th class="p-2 text-right">الماضي</th><th class="p-2 text-right">الضمير</th></tr>' +
+                                '</thead>' +
+                                '<tbody>' + rows + '</tbody>' +
+                            '</table>' +
+                        '</div>' +
+                    '</div>';
+            }
+
+            return '<div class="bg-brand-surface border border-brand-line rounded-3xl p-6 space-y-6 shadow-xl">' +
+                '<div class="flex justify-between items-start">' +
+                    '<div>' +
+                        '<p class="text-sm text-brand-muted">الجذر</p>' +
+                        '<p class="font-medium">' + (w.rootGloss || '') + '</p>' +
+                    '</div>' +
+                    rootHTML +
+                '</div>' +
+                '<hr class="border-brand-line">' +
+                '<div class="text-right">' +
+                    '<div class="flex items-center justify-end gap-3 mb-2">' +
+                        '<button onclick="speak(\'' + w.word + '\')" class="border border-brand-amber text-brand-amber p-2 rounded-xl text-sm">🔊 استماع</button>' +
+                        '<h1 class="text-5xl font-serif font-bold" dir="rtl">' + w.word + '</h1>' +
+                    '</div>' +
+                    '<p class="text-brand-muted italic">' + (w.transliteration || '') + '</p>' +
+                '</div>' +
+                '<div>' +
+                    '<h3 class="text-lg font-semibold text-brand-amber mb-1">المعنى</h3>' +
+                    '<p class="text-lg">' + w.meaning.en + '</p>' +
+                    '<p class="text-xl font-serif mt-2 text-right" dir="rtl">' + w.meaning.ar + '</p>' +
+                '</div>' +
+                (w.examples && w.examples.length ? '<div><h3 class="text-lg font-semibold text-brand-amber mb-2">أمثلة</h3>' + w.examples.map(function(ex){ return '<div class="bg-brand-variant p-3 rounded-xl mb-2 text-right"><p class="font-serif text-lg" dir="rtl">' + ex.ar + '</p><p class="text-sm text-brand-muted">' + ex.en + '</p></div>'; }).join('') + '</div>' : '') +
+                verbHTML +
+            '</div>';
         }
+
+        render();
     </script>
 </body>
 </html>
