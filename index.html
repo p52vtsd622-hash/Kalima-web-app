@@ -73,18 +73,22 @@ button { font-family: inherit; }
 .muted { color: var(--muted); }
 
 /* Android Dock UI Overrides */
-.bottom-dock { position: fixed; bottom: 0; left: 0; right: 0; background: var(--paper); border-top: 1px solid var(--line); z-index: 100; max-width: 760px; margin: 0 auto; padding: 12px 20px calc(12px + env(safe-area-inset-bottom, 0px)); }
+.bottom-dock { position: fixed; bottom: 0; left: 0; right: 0; background: var(--paper); border-top: 1px solid var(--line); z-index: 100; max-width: 760px; margin: 0 auto; padding: 12px 12px calc(12px + env(safe-area-inset-bottom, 0px)); }
 .dock-actions { display: flex; justify-content: space-between; margin-bottom: 12px; position: relative; gap: 8px; }
-.dock-pill { background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 999px; padding: 8px 20px; font-size: 14px; font-weight: 600; cursor: pointer; flex: 1; transition: 0.2s; }
+.dock-pill-container { flex: 1; display: flex; position: relative; }
+.dock-pill { width: 100%; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 999px; padding: 8px 4px; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dock-pill.active { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
 .dock-search { display: flex; align-items: center; background: var(--field); border: 1px solid var(--line); border-radius: 999px; padding: 6px; margin-bottom: 12px; }
-.dock-search input { flex: 1; border: 0; background: transparent; font-family: var(--arabic); font-size: 22px; padding: 4px 12px; color: var(--ink); text-align: right; outline: none; }
+/* The min-width: 0 fixes the Android Webview flexbox expansion bug */
+.dock-search input { flex: 1; min-width: 0; border: 0; background: transparent; font-family: var(--arabic); font-size: 22px; padding: 4px 12px; color: var(--ink); text-align: right; outline: none; }
 .dock-search input.latin { font-family: var(--sans); font-size: 18px; text-align: left; direction: ltr; }
 .dock-search input::placeholder { color: var(--muted); }
 .dock-icon-btn { width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--accent); color: var(--accent-fg); cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.dock-nav { display: flex; justify-content: space-between; padding: 0 12px; }
-.dock-nav-item { width: 52px; height: 52px; border-radius: 14px; border: 0; background: transparent; color: var(--muted); font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+.dock-nav { display: flex; justify-content: space-between; gap: 8px; }
+.dock-nav-container { flex: 1; display: flex; justify-content: center; }
+.dock-nav-item { width: 100%; max-width: 52px; height: 48px; border-radius: 14px; border: 0; background: transparent; color: var(--muted); font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
 .dock-nav-item.active { background: var(--accent); color: var(--accent-fg); }
+
 .dropdown { display: none; position: absolute; bottom: 100%; margin-bottom: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 6px 0; min-width: 140px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
 .dropdown.show { display: block; }
 .dropdown button { display: block; width: 100%; text-align: left; padding: 12px 20px; background: transparent; border: 0; color: var(--ink); font-size: 15px; cursor: pointer; }
@@ -180,7 +184,7 @@ table { width: 100%; border-collapse: collapse; min-width: 440px; }
 table.wide { min-width: 720px; }
 table.conj { min-width: 0; table-layout: fixed; }
 .tha { display: block; font-size: 17px; line-height: 1.5; color: var(--ink); }
-table.conj th:first-child { width: 44%; }
+table.conj th:first-child { width: 35%; }
 th { text-align: left; font-size: 14px; font-weight: 500; color: var(--muted); padding: 10px 14px; border-bottom: 1px solid var(--line); }
 th.r { text-align: right; }
 td, tbody th { padding: 6px 14px; border-top: 1px solid var(--soft-line); vertical-align: middle; }
@@ -296,7 +300,6 @@ td.hit { background: var(--hl); }
         <h2 class="ar" style="font-size: 64px; font-weight: bold; margin-bottom: 16px; color: var(--ink);" dir="rtl">كِتَابَةٌ</h2>
         <p style="color: var(--accent); font-size: 14px; font-weight: 600;">Tap to look up</p>
       </div>
-      <p class="empty" style="text-align: center; margin-top: 24px;">Enter any noun, verb or adjective, with or without vowel marks. To find the Arabic for a word in English, Urdu, Farsi, Turkish or Russian, switch Language in the bottom menu.</p>
     </div>
   </section>
 
@@ -374,16 +377,21 @@ td.hit { background: var(--hl); }
 
 <footer class="bottom-dock">
   <div class="dock-actions">
-      <button id="dock-btn-save" class="dock-pill" onclick="toggleSaveCurrent()">Save</button>
-      <div style="position:relative; flex:1;">
-          <button id="dock-btn-mode" class="dock-pill active" style="width:100%;" onclick="toggleMenu('mode-drop')">Deep</button>
+      <div class="dock-pill-container">
+          <button id="dock-btn-save" class="dock-pill" onclick="toggleSaveCurrent()">Save</button>
+      </div>
+      <div class="dock-pill-container">
+          <button id="dock-btn-search" class="dock-pill active" onclick="toggleSearchMode()">Ar Word</button>
+      </div>
+      <div class="dock-pill-container">
+          <button id="dock-btn-mode" class="dock-pill active" onclick="toggleMenu('mode-drop')">Deep</button>
           <div id="mode-drop" class="dropdown" style="left:50%; transform:translateX(-50%); text-align:center;">
               <button onclick="setLookupMode('deep')" style="text-align:center;">Deep</button>
               <button onclick="setLookupMode('fast')" style="text-align:center;">Fast</button>
           </div>
       </div>
-      <div style="position:relative; flex:1;">
-          <button id="dock-btn-lang" class="dock-pill" style="width:100%;" onclick="toggleMenu('lang-drop')">Off</button>
+      <div class="dock-pill-container">
+          <button id="dock-btn-lang" class="dock-pill" onclick="toggleMenu('lang-drop')">Off</button>
           <div id="lang-drop" class="dropdown" style="right:0;">
               <button onclick="setGlobalLang('ur')">Urdu</button>
               <button onclick="setGlobalLang('fa')">Farsi</button>
@@ -394,15 +402,14 @@ td.hit { background: var(--hl); }
       </div>
   </div>
   <div class="dock-search">
-      <button class="dock-icon-btn" style="background:var(--surface); color:var(--accent); border:1px solid var(--line);" onclick="document.getElementById('q').value=''; clearUI();">⟳</button>
       <input id="q" type="text" dir="rtl" lang="ar" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="اكتب كلمة أو ابحث...">
       <button id="go" class="dock-icon-btn">➔</button>
   </div>
   <div class="dock-nav">
-      <button class="dock-nav-item active" data-tab="lookup" onclick="showTab('lookup')">ك</button>
-      <button class="dock-nav-item" data-tab="saved" onclick="showTab('saved')">💾</button>
-      <button class="dock-nav-item" data-tab="practice" onclick="showTab('practice')">🧠</button>
-      <button class="dock-nav-item" data-tab="settings" onclick="showTab('settings')">⚙️</button>
+      <div class="dock-nav-container"><button class="dock-nav-item active" data-tab="lookup" onclick="showTab('lookup')">ك</button></div>
+      <div class="dock-nav-container"><button class="dock-nav-item" data-tab="saved" onclick="showTab('saved')">💾</button></div>
+      <div class="dock-nav-container"><button class="dock-nav-item" data-tab="practice" onclick="showTab('practice')">🧠</button></div>
+      <div class="dock-nav-container"><button class="dock-nav-item" data-tab="settings" onclick="showTab('settings')">⚙️</button></div>
   </div>
 </footer>
 
@@ -433,6 +440,7 @@ td.hit { background: var(--hl); }
   /* ---------- view state ---------- */
   var busy = false, ctl = null, currentData = null, lastReverse = null;
   var lookupMode = "deep";
+  var searchMode = "ar";
 
   /* ---------- tiny helpers ---------- */
   function el(tag, props) {
@@ -849,6 +857,26 @@ lookupMode === 'fast' ? '- FAST MODE: Set "forms", "synonyms", "antonyms" to [].
     paintSaveBtn();
   };
 
+  window.toggleSearchMode = function() {
+    var btn = document.getElementById("dock-btn-search");
+    var qInput = document.getElementById("q");
+    if (searchMode === "ar") {
+        searchMode = "rev";
+        btn.textContent = "Reverse";
+        btn.classList.remove("active");
+        qInput.placeholder = "Find Arabic for...";
+        qInput.dir = "auto";
+        qInput.classList.add("latin");
+    } else {
+        searchMode = "ar";
+        btn.textContent = "Ar Word";
+        btn.classList.add("active");
+        qInput.placeholder = "اكتب كلمة أو ابحث...";
+        qInput.dir = "rtl";
+        qInput.classList.remove("latin");
+    }
+  };
+
   function paintSaveBtn() {
     var btn = $("#dock-btn-save");
     if (!btn) return;
@@ -892,25 +920,21 @@ lookupMode === 'fast' ? '- FAST MODE: Set "forms", "synonyms", "antonyms" to [].
     showTab("lookup");
     var raw = input.value.trim().replace(/\s+/g, " ").slice(0, 80);
     if (!raw) { showError("Type a word first."); return; }
-    var hasAr = /[\u0600-\u06FF]/.test(raw), hasLatin = /[A-Za-z\u00C0-\u024F]/.test(raw);
-    if (!hasAr && hasLatin) {
+
+    var isReverse = searchMode === "rev";
+    var hasAr = /[\u0600-\u06FF]/.test(raw);
+
+    // Hard block: If toggle is 'ar' but there are no Arabic characters, throw error.
+    if (!isReverse && !hasAr) {
+        showError("Please type the word in Arabic letters, or switch to Reverse Search.");
+        return;
+    }
+
+    if (isReverse) {
       return guarded(function (signal) { return doReverse(raw, signal); });
     }
     return guarded(function (signal) { return doArabic(raw.slice(0, 60), signal); });
   }
-
-  input.addEventListener("input", function() {
-    var raw = input.value.trim();
-    var hasLatin = /[A-Za-z\u00C0-\u024F]/.test(raw);
-    var hasAr = /[\u0600-\u06FF]/.test(raw);
-    if (hasLatin && !hasAr) {
-      input.dir = "auto";
-      input.classList.add("latin");
-    } else {
-      input.dir = "rtl";
-      input.classList.remove("latin");
-    }
-  });
 
   async function doArabic(word, signal) {
     var data = await askJson(buildLookupPrompt(word), signal);
@@ -934,6 +958,14 @@ lookupMode === 'fast' ? '- FAST MODE: Set "forms", "synonyms", "antonyms" to [].
   function openSaved(s) {
     showTab("lookup");
     input.value = (s.data && s.data.word) || s.id;
+    searchMode = "ar"; // reset toggle for an arabic word
+    var btn = document.getElementById("dock-btn-search");
+    btn.textContent = "Ar Word";
+    btn.classList.add("active");
+    input.placeholder = "اكتب كلمة أو ابحث...";
+    input.dir = "rtl";
+    input.classList.remove("latin");
+
     setStatus(null); emptyEl.hidden = true;
     renderResult(s.data);
   }
@@ -1025,9 +1057,13 @@ lookupMode === 'fast' ? '- FAST MODE: Set "forms", "synonyms", "antonyms" to [].
       if (w.note) wl.append(el("span", { "class": "gram", text: w.note }));
       meta.append(wl);
     }
-    var listen = el("button", { "class": "btn ghost", "style": "margin-top:12px;", type: "button", onclick: function () { speak(d.word); } });
+    var row = el("div", { "style": "display: flex; justify-content: space-between; align-items: center; width: 100%;" },
+      meta,
+      ar(d.word, "bigword")
+    );
+    var listen = el("button", { "class": "btn ghost", "style": "margin-top:16px;", type: "button", onclick: function () { speak(d.word); } });
     listen.innerHTML = SPEAKER_SVG + "<span>Listen</span>";
-    return el("section", { "class": "wordhead" }, ar(d.word, "bigword"), meta, listen);
+    return el("section", { "class": "wordhead" }, row, listen);
   }
 
   function toggleSave(d) {
@@ -1084,7 +1120,7 @@ lookupMode === 'fast' ? '- FAST MODE: Set "forms", "synonyms", "antonyms" to [].
     var sec = el("section", { "class": "sec" }, el("h2", { text: "In a sentence" }));
     (Array.isArray(d.examples) ? d.examples : []).forEach(function (x, i) {
       if (!x) return;
-      var arcol = el("div", { "class": "arcol", lang: "ar", dir: "rtl" }, x.ar || "", el("span", { "class": "spk" }, speakBtn(x.ar, "Listen to sentence")));
+      var arcol = el("div", { "class": "arcol", lang: "ar", dir: "rtl" }, x.ar || "", el("span", { "class": "spk" }, speakBtn(x.ar, "Listen")));
       sec.append(el("div", { "class": "pair" },
         el("div", { "class": "bi" }, el("div", { "class": "en", text: x.en || "" }), arcol),
         trBlock(trList(d, "examples", i))));
@@ -1206,7 +1242,6 @@ lookupMode === 'fast' ? '- FAST MODE: Set "forms", "synonyms", "antonyms" to [].
       el("p", { "class": "hint", text: "Tap a word for the full breakdown." }));
     list.forEach(function (r) { resultEl.append(candButton(r, lang)); });
   }
-
 
   /* ---------- Quran and Nahj al-Balagha ---------- */
   var KS = window.KalimaSearch;
