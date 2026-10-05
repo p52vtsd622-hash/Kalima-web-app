@@ -126,6 +126,13 @@ button { font-family: inherit; }
 .tx[lang="ru"] { font-family: var(--sans); --fs: 17px; --lh: 1.5; direction: ltr; }
 .muted { color: var(--muted); }
 
+/* --- Top Mockup Header Bar --- */
+.top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; position: relative; }
+.top-clear-btn { background: var(--surface); color: var(--primary); border: 1.5px solid var(--primary); border-radius: 999px; padding: 6px 18px; font-size: 15px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+.top-clear-btn:active { opacity: 0.7; }
+.top-title { font-size: 17px; font-weight: 500; color: var(--primary); position: absolute; left: 50%; transform: translateX(-50%); }
+.top-history-btn { width: 38px; height: 38px; border-radius: 50%; border: 1.5px solid var(--primary); background: var(--surface); color: var(--primary); display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; transition: 0.2s; }
+
 /* --- New Floating Emerald Dock UI --- */
 .bottom-dock { 
     position: fixed; bottom: 0; left: 0; right: 0; 
@@ -165,17 +172,20 @@ button { font-family: inherit; }
     transition: 0.2s;
 }
 
+/* --- Bottom Nav Bar & Icons --- */
 .dock-nav { 
     display: flex; justify-content: space-between; align-items: center; 
-    background: var(--nav-bg); border-radius: 999px; padding: 6px; gap: 4px;
+    background: var(--nav-bg); border-radius: 999px; padding: 6px 10px; gap: 6px;
     border: 1px solid var(--line); box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
 .dock-nav-item { 
-    flex: 1; height: 44px; border-radius: 999px; border: 0; 
-    background: transparent; color: var(--nav-fg); font-size: 22px; 
+    flex: 1; height: 46px; border-radius: 999px; border: 0; 
+    background: transparent; color: var(--nav-fg); 
     cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; 
 }
 .dock-nav-item.active { background: var(--accent); color: var(--accent-fg); }
+.dock-nav-item svg { width: 22px; height: 22px; fill: currentColor; }
+.dock-nav-item.active svg text { fill: var(--accent-fg); }
 
 /* --- Suggested Word Card (Empty State) --- */
 #empty .suggest-card { 
@@ -192,7 +202,6 @@ button { font-family: inherit; }
 .dropdown button { display: block; width: 100%; text-align: left; padding: 12px 20px; background: transparent; border: 0; color: var(--ink); font-size: 15px; cursor: pointer; }
 .dropdown button:hover { background: var(--soft-line); }
 
-header h1 { font-family: var(--arabic); font-size: 34px; line-height: 1.3; font-weight: 700; color: var(--primary); margin-bottom: 24px; text-align: center; }
 #view-settings h2 { font-size: 28px; color: var(--primary); margin-bottom: 20px; }
 
 /* Settings & Elements */
@@ -387,8 +396,16 @@ td.hit { background: var(--primary-light); }
 </head>
 <body>
 <main>
-  <header>
-    <h1>Kalima</h1>
+  <!-- Top Bar matching Mockup -->
+  <header class="top-bar">
+    <button class="top-clear-btn" type="button" onclick="window.clearSearchAndUI()">Clear</button>
+    <div class="top-title">Translations</div>
+    <button class="top-history-btn" type="button" aria-label="History" title="History" onclick="showTab('saved')">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <polyline points="12 6 12 12 16 14"></polyline>
+      </svg>
+    </button>
   </header>
 
   <section id="view-lookup">
@@ -503,15 +520,39 @@ td.hit { background: var(--primary-light); }
   </div>
   <div class="dock-search">
       <input id="q" type="text" dir="rtl" lang="ar" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="اكتب كلمة أو ابحث...">
-      <button id="go" class="dock-send-btn">
+      <button id="go" class="dock-send-btn" aria-label="Search">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
       </button>
   </div>
   <div class="dock-nav">
-      <button class="dock-nav-item active" data-tab="lookup" onclick="showTab('lookup')">ك</button>
-      <button class="dock-nav-item" data-tab="saved" onclick="showTab('saved')">💾</button>
-      <button class="dock-nav-item" data-tab="practice" onclick="showTab('practice')">🧠</button>
-      <button class="dock-nav-item" data-tab="settings" onclick="showTab('settings')">⚙️</button>
+      <!-- 1. Dad Speech Bubble -->
+      <button class="dock-nav-item active" data-tab="lookup" onclick="showTab('lookup')" title="Lookup">
+        <svg viewBox="0 0 24 24" width="24" height="24">
+          <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
+          <text x="12" y="13.5" font-family="'Amiri', serif" font-size="11" font-weight="bold" fill="var(--paper)" text-anchor="middle">ض</text>
+        </svg>
+      </button>
+
+      <!-- 2. Brain / Saved Words Profile -->
+      <button class="dock-nav-item" data-tab="saved" onclick="showTab('saved')" title="Saved Words">
+        <svg viewBox="0 0 24 24" width="22" height="22">
+          <path d="M12 2C7.58 2 4 5.58 4 10c0 2.08.8 3.97 2.1 5.39.3.33.47.76.47 1.21V19c0 1.1.9 2 2 2h3.5v-2H9v-2.18c0-.98-.4-1.92-1.09-2.62C6.72 13.01 6 11.59 6 10c0-3.31 2.69-6 6-6s6 2.69 6 6c0 1.59-.72 3.01-1.91 4.2-.69.7-1.09 1.64-1.09 2.62V19h-1.5v2H15c1.1 0 2-.9 2-2v-2.4c0-.45.17-.88.47-1.21C18.8 13.97 19.6 12.08 19.6 10c0-4.42-3.58-8-7.6-8z"/>
+        </svg>
+      </button>
+
+      <!-- 3. Quiz / Knowledge Graduation Cap (replacing audio wave) -->
+      <button class="dock-nav-item" data-tab="practice" onclick="showTab('practice')" title="Practice & Quiz">
+        <svg viewBox="0 0 24 24" width="24" height="24">
+          <path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/>
+        </svg>
+      </button>
+
+      <!-- 4. Settings Gear -->
+      <button class="dock-nav-item" data-tab="settings" onclick="showTab('settings')" title="Settings">
+        <svg viewBox="0 0 24 24" width="22" height="22">
+          <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+        </svg>
+      </button>
   </div>
 </footer>
 
@@ -951,6 +992,11 @@ lookupMode === 'fast' ? '- FAST MODE: Set "forms", "synonyms", "antonyms" to [].
     resultEl.replaceChildren();
     emptyEl.hidden = false;
     paintSaveBtn();
+  };
+
+  window.clearSearchAndUI = function() {
+    document.getElementById("q").value = "";
+    window.clearUI();
   };
 
   window.toggleSaveCurrent = function() {
