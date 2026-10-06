@@ -1100,7 +1100,22 @@ lookupMode === 'fast' ? '- FAST MODE: Set "forms", "synonyms", "antonyms" to [].
     renderReverse(data, text, prefs.lang);
   }
 
-  function openWord(w) { input.value = w; run(); }
+    function openWord(w) { 
+    input.value = w; 
+    
+    // Automatically switch back to Arabic mode when a candidate word is clicked
+    searchMode = "ar";
+    var btn = document.getElementById("dock-btn-search");
+    if (btn) {
+        btn.textContent = "Ar Word";
+        btn.classList.add("active");
+    }
+    input.placeholder = "اكتب كلمة أو ابحث...";
+    input.dir = "rtl";
+    input.classList.remove("latin");
+    
+    run(); 
+  }
 
   function openSaved(s) {
     showTab("lookup");
