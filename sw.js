@@ -1,36 +1,23 @@
-// Keeps the app's own files available offline. It never touches calls to Google's Gemini API or the class server.
-const CACHE = "kalima-v9";
-const FILES = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./config.js", "./search.js", "./quran-data.json", "./nahj-data.json"];
-
-self.addEventListener("install", (e) => {
-  // "reload" skips the browser's HTTP cache, so a fresh deploy is never stored as an old copy.
-  // Each file is added on its own, so one slow or missing file can't stop the update from installing.
-  e.waitUntil(
-    caches.open(CACHE)
-      .then((c) => Promise.all(FILES.map((u) => c.add(new Request(u, { cache: "reload" })).catch(() => {}))))
-      .then(() => self.skipWaiting())
-  );
-});
-
-self.addEventListener("activate", (e) => {
-  e.waitUntil(
-    caches.keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
-      .then(() => self.clients.claim())
-  );
-});
-
-self.addEventListener("fetch", (e) => {
-  const req = e.request;
-  const url = new URL(req.url);
-  if (req.method !== "GET" || url.origin !== self.location.origin) return; // everything else goes straight to the network
-  e.respondWith(
-    // "no-cache" always asks the server whether the file changed, so updates show up on the next open.
-    fetch(req, { cache: "no-cache" })
-      .then((res) => {
-        if (res.ok) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(req, copy)); }
-        return res;
-      })
-      .catch(() => caches.match(req).then((hit) => hit || caches.match("./index.html")))
-  );
+// Change RELEASE whenever any shipped app asset changes. Installation is atomic.
+const RELEASE='0.8-web.1', PREFIX='kalima-web-'+encodeURIComponent(new URL(self.registration.scope).pathname)+'-', CACHE=PREFIX+RELEASE;
+const ASSETS=["bootstrap.mjs","./","api.mjs","app.mjs","apple-touch-icon.png","config.js","core.mjs","corpus.mjs","icon-192.png","icon-512.png","icon-maskable-512.png","index.html","manifest.webmanifest","motion.mjs","nahj-data.json","quran-data.json","search.js","styles.css","suggestions.json","ui-translations.json","ui.mjs","fonts/amiri_bold.ttf","fonts/amiri_quran.ttf","fonts/amiri_regular.ttf","fonts/instrument_sans.ttf","fonts/instrument_sans_medium.ttf","fonts/instrument_sans_semibold.ttf","fonts/noto_nastaliq_urdu.ttf","fonts/noto_nastaliq_urdu_semibold.ttf","fonts/vazirmatn.ttf","fonts/vazirmatn_medium.ttf"];
+self.addEventListener('install',event=>event.waitUntil((async()=>{
+  const cache=await caches.open(CACHE);
+  try{await cache.addAll(ASSETS.map(path=>new Request(new URL(path,self.registration.scope),{cache:'reload'})));}
+  catch(error){await caches.delete(CACHE);throw error;}
+})()));
+self.addEventListener('message',event=>{if(event.data?.type==='ACTIVATE_UPDATE')self.skipWaiting();});
+self.addEventListener('activate',event=>event.waitUntil((async()=>{
+  for(const key of await caches.keys())if(key.startsWith(PREFIX)&&key!==CACHE)await caches.delete(key);
+  await self.clients.claim();
+})()));
+self.addEventListener('fetch',event=>{
+  const request=event.request,url=new URL(request.url),scope=new URL(self.registration.scope);
+  if(request.method!=='GET'||url.origin!==scope.origin||!url.pathname.startsWith(scope.pathname))return;
+  const relative=url.pathname.slice(scope.pathname.length)||'./';
+  if(request.mode!=='navigate'&&!ASSETS.includes(relative))return;
+  event.respondWith((async()=>{
+    const cache=await caches.open(CACHE),cached=await cache.match(request.mode==='navigate'?new URL('./',scope):request,{ignoreSearch:true});
+    return cached||fetch(request);
+  })());
 });
