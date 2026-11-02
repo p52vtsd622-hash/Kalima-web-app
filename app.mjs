@@ -36,19 +36,21 @@ function sync() {
   const dark=store.prefs.theme==='dark'||store.prefs.theme==='system'&&matchMedia('(prefers-color-scheme: dark)').matches;
   document.documentElement.dataset.theme=dark?'dark':'light';document.querySelector('meta[name="theme-color"]').content=dark?'#161718':'#F8F6F0';
   const pill=$('#save-pill'),saved=state.result&&store.saved.some(e=>e.id===state.result.word);
-  pill.textContent=t(saved?'Saved':'Save');pill.classList.toggle('selected',!!saved);pill.classList.toggle('saved',!!saved);pill.disabled=!state.result||state.loading;
+  const face=el('span',{class:'pill-face'},icon(saved?'check':'bookmark'),el('span',{class:'pill-label',text:saved?'Saved':'Save'}));pill.replaceChildren(face);pill.classList.toggle('selected',!!saved);pill.classList.toggle('saved',!!saved);pill.disabled=!state.result||state.loading;
   pill.setAttribute('aria-label',t(!state.result?'Look up a word first':saved?'Remove saved word':'Save word'));
   $('#search-pill').textContent=t(state.searchMode==='rev'?'Reverse':'Ar Word');$('#search-pill').classList.toggle('selected',state.searchMode!=='rev');
   $('#depth-pill').textContent=t(state.depth==='fast'?'Fast':'Deep');$('#language-pill').textContent=NATIVE[store.prefs.lang]||t('Off');
+  for(const id of ['search-pill','depth-pill','language-pill']){const p=$('#'+id),label=p.textContent;p.replaceChildren(el('span',{class:'pill-face'},el('span',{class:'pill-label',raw:label})));}
   $('#language-pill').setAttribute('aria-label',t('Extra translation')+': '+t(LANGS[store.prefs.lang]||'Off'));
   query.classList.toggle('reverse',state.searchMode==='rev');query.dir=state.searchMode==='rev'?(RTL.has(app)?'rtl':'ltr'):'rtl';query.lang=state.searchMode==='rev'?app:'ar';
   query.placeholder=t(state.searchMode==='rev'?'Find Arabic for...':'Type an Arabic word…');$('#query-label').textContent=t('Search');$('#submit').setAttribute('aria-label',t('Search'));$('#submit').disabled=!query.value.trim()||state.loading;
   const title=state.tab==='lookup'?(state.result?'Translations':'Kalima'):({saved:'Saved words',practice:'Practice',settings:'Settings',history:'Recent searches'})[state.tab];
   $('#title').textContent=t(title);$('#clear').textContent=t('Clear');$('#clear').hidden=state.tab!=='lookup'||!(state.query||state.result||state.loading||state.error||state.candidates);
+  $('#title').classList.toggle('home-title',title==='Kalima');
   $('#history').setAttribute('aria-label',t('Recent searches'));
   $('#pills').hidden=state.focused&&state.tab==='lookup';
   for(const b of document.querySelectorAll('#navigation>button'))b.setAttribute('aria-label',t(({lookup:'Lookup',saved:'Saved words',practice:'Practice',settings:'Settings'})[b.dataset.tab]));
-  selectNav(state.tab);renderUndo();
+  selectNav(state.tab);renderUndo();renderCompact();
 }
 function renderUndo() {
   const box=$('#undo'),change=store.undo.at(-1);box.hidden=!change;box.replaceChildren();if(!change)return;
@@ -84,14 +86,14 @@ function toggleSave() {
 function lookupScreen() {
   const body=el('div',{});
   if(state.focused)return focusedSearch();
-  if(state.loading)return el('div',{},loading(state.searchMode==='rev'?'Finding Arabic matches…':'Analysing this word…'),button('Stop',()=>{invalidate();state.error=null;render();},'quiet'));
+  if(state.loading)return el('div',{},row(el('span',{class:'spinner','aria-hidden':'true'}),el('p',{class:'grow',role:'status',text:state.searchMode==='rev'?'Finding Arabic matches…':'Analysing this word…'}),button('Stop',()=>{invalidate();state.error=null;render();},'quiet')),...[false,true].map(compact=>card(el('div',{class:'skeleton'+(compact?' compact':''),'aria-hidden':'true'},[1,2,3,4].map(()=>el('i'))))));
   if(state.error)return el('div',{},sectionError(state.error,()=>runLookup()),button('Clear',clear,'quiet'));
   if(state.candidates)return el('div',{},el('h2',{text:`Arabic for "${state.query}"`}),state.candidates.length?state.candidates.map(candidateCard):el('p',{text:'No Arabic matches found.'}));
   if(state.result)return resultScreen(state.result);
   body.append(suggestionCard());
   const due=store.saved.filter(e=>e.due<=Date.now()).length;
   if(due)body.append(el('button',{type:'button',class:'card continuation',onclick:()=>{state.practiceMode='flash';state.practice=null;switchTab('practice');}},el('span',{text:'Continue learning'}),el('strong',{text:`Review ${due} ${due===1?'word':'words'}`})));
-  else if(store.recent.length)body.append(card(el('h2',{text:'Recent searches'}),el('div',{class:'word-list'},store.recent.slice(0,3).map(w=>button(w,()=>openWord(w))))));
+  else if(store.recent.length)body.append(el('section',{class:'card recent-card'},el('h2',{text:'Recent searches'}),el('div',{class:'word-list'},store.recent.slice(0,3).map(w=>button(w,()=>openWord(w))))));
   return incoming(body);
 }
 function suggestionCard() {
@@ -133,8 +135,12 @@ async function runLookup() {
 }
 function candidateCard(item) {
   const app=store.prefs.appLanguage,extra=store.prefs.lang;
-  return el('button',{class:'card',onclick:()=>openWord(item.ar)},arabic(item.ar),item.transliteration&&app!=='ar'?prose(item.transliteration,'en','muted'):null,
-    prose(app==='en'?item.en:item.main||'',app),extra!=='off'?prose(extra==='en'?item.en:item.tx||'',extra,'trans'):null);
+  return el('button',{class:'card candidate',onclick:()=>openWord(item.ar)},el('div',{class:'candidate-copy'},item.transliteration&&app!=='ar'?prose(item.transliteration,'en'):null,
+    item.partOfSpeech?el('p',{class:'muted',text:item.partOfSpeech}):null,item.wazn?arabic(item.wazn):null,prose(app==='en'?item.en:item.main||'',app,'prose'),txLine(extra==='en'?item.en:item.tx)),arabic(item.ar));
+}
+function txLine(value) {
+  const lang=store.prefs.lang;if(lang==='off'||!value)return null;
+  return el('div',{class:'trans'},el('p',{class:'label',text:LANGS[lang]}),prose(value,lang,'translation'));
 }
 function openWord(word) {
   const cached=store.saved.find(e=>e.id===word||e.data.word===word);if(cached){openSaved(cached);return;}
@@ -149,42 +155,47 @@ function openSaved(entry,source) {
   render();content.scrollTop=0;if(source)requestAnimationFrame(()=>animateWord(source,content.querySelector('.hero-word'),entry.data.word));
 }
 function returnToSource() {
-  if(!state.source)return;const origin=state.source,source=wordSnapshot(content.querySelector('.hero-word')),value=state.result?.word;state.filter=origin.filter;state.scroll[origin.tab]=origin.scroll;switchTab(origin.tab);state.source=null;
+  if(!state.source)return;const origin=state.source,source=wordSnapshot($('#header-word').hidden?content.querySelector('.hero-word'):$('#header-word')),value=state.result?.word;state.filter=origin.filter;state.scroll[origin.tab]=origin.scroll;switchTab(origin.tab);state.source=null;
   const target=content.querySelector(`[data-id="${CSS.escape(origin.id)}"] .arabic`);if(target)requestAnimationFrame(()=>animateWord(source,target,value));
 }
-function shortMeaning(d) {return text(project(d,store.prefs.appLanguage).data.meaning?.en).split(/[;\n]|\.\s/)[0].trim().slice(0,160);}
+function shortMeaning(d) {return (text(project(d,store.prefs.appLanguage).data.meaning?.en)||t('Translation not downloaded')).split(/[;\n]|\.\s/)[0].trim().slice(0,160);}
 function resultScreen(d) {
   const app=store.prefs.appLanguage,extra=store.prefs.lang,{data:v,translation:tx,missing}=project(d,app,extra),body=el('div',{});
   const hero=el('section',{class:'hero'},state.source?button('Back',returnToSource,'quiet'):null,arabic(d.word,'hero-word'),d.transliteration&&app!=='ar'?prose(d.transliteration,'en','muted'):null,
-    row(v.partOfSpeech?el('span',{class:'tag',text:v.partOfSpeech}):null,iconButton('listen','Listen',()=>speak(d.word))));body.append(hero);
+    row(v.partOfSpeech?el('span',{class:'tag',text:v.partOfSpeech}):null,button('Listen',()=>speak(d.word),'outlined')));body.append(hero);
   const meanings=card(el('h2',{text:'Meaning'}));
-  if(app!=='ar'&&v.meaning?.en)meanings.append(el('p',{class:'label',text:LANGS[app]}),prose(v.meaning.en,app,'meaning'));
-  if(d.meaning?.ar)meanings.append(el('p',{class:'label',text:'Arabic'}),arabic(d.meaning.ar));
-  if(extra!=='off'&&tx.meaning)meanings.append(el('div',{class:'trans'},el('p',{class:'label',text:LANGS[extra]}),prose(tx.meaning,extra,'meaning')));
+  if(app!=='ar')meanings.append(el('p',{class:'label',text:LANGS[app]}),prose(v.meaning?.en||t('Translation not downloaded'),app,'meaning'));
+  if(d.meaning?.ar)meanings.append(arabic(d.meaning.ar,app==='ar'?'meaning':'meaning-ar'));
+  if(extra!=='off'&&tx.meaning)meanings.append(txLine(tx.meaning));
   body.append(meanings);
-  for(const language of missing){const slot=card(el('p',{text:`Download the ${LANGS[language]} explanation for this word.`}),button(`Download ${LANGS[language]}`,()=>loadTranslation(language,slot),'quiet'));body.append(slot);}
-  if(d.meaning?.tx)body.append(card(el('p',{text:'This older Android word has a translation with no language label. Which language is it?'}),button('Translation language',()=>choiceSheet('Translation language','',Object.keys(LANGS).filter(l=>l!=='ar').map(l=>({value:l,label:LANGS[l],native:NATIVE[l]})),null,l=>{state.result=normalizeData(d,l);saveData(state.result);render();}),'quiet')));
-  if(v.grammarNote)body.append(section('Grammar',prose(v.grammarNote,app),'grammar',state.sections));
-  body.append(card(el('h2',{text:'Wazn'}),arabic(d.wazn?.pattern||'—'),v.wazn?.note?prose(v.wazn.note,app):null));
-  if(list(d.root).length)body.append(card(el('h2',{text:'Root'}),arabic(d.root.join(' – '),'root-letters'),v.rootGloss?prose(v.rootGloss,app):null,extra!=='off'&&tx.root?prose(tx.root,extra,'trans'):null));
-  else body.append(card(el('p',{text:'No root: this may be a particle or a loanword.'})));
-  if(list(d.examples).length)body.append(section('In a sentence',list(v.examples).map((example,i)=>card(arabic(example.ar),example.en?prose(example.en,app):null,extra!=='off'&&tx.examples?.[i]?prose(tx.examples[i],extra,'trans'):null,iconButton('listen','Listen to sentence',()=>speak(example.ar)))),'examples',state.sections));
+  if(missing.length){const names=missing.map(l=>t(LANGS[l])).join(', '),slot=card(el('p',{class:'muted',text:`Download the ${names} explanation for this word.`}),button(`Download ${names}`,()=>loadTranslations(missing,slot),'quiet'));body.insertBefore(slot,meanings);}
+  if(d.meaning?.tx)body.insertBefore(card(el('p',{class:'muted',text:'This older Android word has a translation with no language label. Which language is it?'}),el('p',{raw:d.meaning.tx}),row(Object.entries(LANGS).map(([l,name])=>button(name,()=>{state.result=normalizeData(d,l);saveData(state.result);render();},'quiet')))),meanings);
+  if(v.grammarNote||d.wazn?.pattern||v.wazn?.note){const grammar=card(el('h2',{text:'Grammar'}));grammar.classList.add('grammar-card');
+    if(v.grammarNote)grammar.append(prose(v.grammarNote,app,'prose muted grammar-note'));
+    if(d.wazn?.pattern)grammar.append(el('p',{class:'label',text:'Wazn'}),arabic(d.wazn.pattern,'grammar-pattern'));
+    if(v.wazn?.note)grammar.append(prose(v.wazn.note,app,'prose muted'));body.append(grammar);}
+  const rootCard=card(),rootBand=el('div',{class:'root-band'},el('div',{class:'root-copy'},el('h2',{text:'Root'}),list(d.root).length?prose(v.rootGloss||'',app,'prose muted'):el('p',{class:'muted',text:'No root: this may be a particle or a loanword.'}),txLine(tx.root)));
+  rootCard.classList.add('root-card');if(list(d.root).length){rootBand.append(el('div',{class:'root-tiles'+(d.root.length>3?' quad':'')},d.root.map(letter=>el('span',{class:'root-tile',lang:'ar',raw:letter}))));}
+  rootCard.append(rootBand);body.append(rootCard);
+  if(list(d.root).length){let expanded=state.sections.get('roots')||false;const slot=el('div',{class:'root-results',hidden:!expanded});
+    const toggle=button(expanded?'Hide words from this root':'Words from this root',()=>{expanded=!expanded;state.sections.set('roots',expanded);toggle.textContent=t(expanded?'Hide words from this root':'Words from this root');toggle.setAttribute('aria-expanded',String(expanded));slot.hidden=!expanded;if(expanded)showRoots(d,slot);},'outlined root-toggle',{'aria-expanded':String(expanded)});
+    rootCard.append(toggle,slot);if(expanded)queueMicrotask(()=>showRoots(d,slot));}
+  if(list(d.examples).length)body.append(section('In a sentence',list(v.examples).map((example,i)=>el('div',{class:'example'},arabic(example.ar,'example-ar'),button('Listen to sentence',()=>speak(example.ar),'quiet'),example.en?prose(example.en,app,'prose'):null,txLine(tx.examples?.[i]))),'examples',state.sections,undefined,true));
   body.append(section('Examples in texts',null,'texts',state.sections,slot=>showCorpora(d,slot)));
   if(d.verb)body.append(verbSection(d,v));
-  if(list(d.root).length)body.append(section('Words from this root',null,'roots',state.sections,slot=>showRoots(d,slot)));
-  for(const [key,title] of [['synonyms','Synonyms'],['antonyms','Antonyms']])body.append(section(title,list(v[key]).length?list(v[key]).map((x,i)=>el('button',{class:'card',onclick:()=>openWord(x.ar)},arabic(x.ar),x.en?prose(x.en,app):null,extra!=='off'&&tx[key]?.[i]?prose(tx[key][i],extra,'trans'):null)):el('p',{text:'None found.'}),key,state.sections));
-  if(list(d.forms).length)body.append(section('Related forms',el('div',{class:'word-list'},d.forms.map(w=>button(w,()=>openWord(w)))),'forms',state.sections));
-  if(v.note)body.append(section('Usage note',prose(v.note,app),'note',state.sections));
+  for(const [key,title] of [['synonyms','Synonyms'],['antonyms','Antonyms']])if(list(v[key]).length)body.append(section(title,list(v[key]).map((x,i)=>el('div',{class:'related-row'},el('div',{class:'grow'},prose(x.en||'',app,'prose muted'),txLine(tx[key]?.[i])),el('button',{type:'button',class:'quiet related-word',onclick:()=>openWord(x.ar)},arabic(x.ar)))),key,state.sections));
+  if(v.note)body.append(section('Usage note',prose(v.note,app,'prose muted'),'note',state.sections));
   return incoming(body);
 }
-async function loadTranslation(language,slot) {
-  const d=state.result,generation=state.generation,controller=actionController();slot.replaceChildren(loading(`Adding the ${LANGS[language]} explanation…`));
+async function loadTranslations(languages,slot) {
+  const d=state.result,generation=state.generation,controller=actionController(),names=languages.map(l=>t(LANGS[l])).join(', ');slot.replaceChildren(loading(`Adding the ${names} explanation…`));
   try{
-    const result=parseJSON(await ask(translationPrompt(d,language),settings(),controller.signal));
-    if(!text(result.meaning)||['examples','synonyms','antonyms'].some(k=>!Array.isArray(result[k])||result[k].length!==list(d[k]).length||result[k].some(x=>typeof x!=='string')))throw new ApiError('invalid_json');
-    if(generation!==state.generation)return;
-    const next=clone(d);next.trans={...object(next.trans),[language]:result};if(language==='ar'&&!next.meaning?.ar)next.meaning={...object(next.meaning),ar:result.meaning};state.result=next;saveData(next);render();
-  }catch(e){if(generation===state.generation)slot.replaceChildren(sectionError(e.code==='invalid_json'?'The translation was incomplete. Try again.':errorMessage(e),()=>loadTranslation(language,slot)));}
+    const next=clone(d);next.trans={...object(next.trans)};
+    for(const language of languages){const result=parseJSON(await ask(translationPrompt(d,language),settings(),controller.signal));
+      if(!text(result.meaning)||['examples','synonyms','antonyms'].some(k=>!Array.isArray(result[k])||result[k].length!==list(d[k]).length||result[k].some(x=>typeof x!=='string')))throw new ApiError('invalid_json');
+      if(generation!==state.generation)return;next.trans[language]=result;if(language==='ar'&&!next.meaning?.ar)next.meaning={...object(next.meaning),ar:result.meaning};}
+    state.result=next;saveData(next);render();
+  }catch(e){if(generation===state.generation)slot.replaceChildren(sectionError(e.code==='invalid_json'?'The translation was incomplete. Try again.':errorMessage(e),()=>loadTranslations(languages,slot)));}
   finally{finishController(controller);}
 }
 async function showRoots(d,slot) {
@@ -201,11 +212,14 @@ async function showRoots(d,slot) {
 }
 function verbSection(d,v) {
   const app=store.prefs.appLanguage,nodes=[];
-  for(const [key,label] of [['dictionaryForm','Dictionary form (he, past)'],['presentForm','Present (he)'],['masdar','Masdar (verbal noun)'],['masdarWazn','Masdar wazn']])if(d.verb[key])nodes.push(card(el('p',{class:'label',text:label}),arabic(d.verb[key]),iconButton('listen','Listen',()=>speak(d.verb[key]))));
-  if(d.verb.form)nodes.unshift(el('p',{text:`Form ${d.verb.form}`}));if(v.verb.inputPerson)nodes.push(prose(v.verb.inputPerson,app));
+  if(d.verb.form)nodes.push(el('div',{},el('p',{class:'label',text:'Verb form'}),row(el('p',{text:/^[IVX]{1,5}$/.test(d.verb.form)?`Form ${d.verb.form}`:d.verb.form}),d.verb.pattern?arabic(d.verb.pattern):null)));
+  const tense=[d.verb.inputTense?t(d.verb.inputTense):'',v.verb.inputPerson].filter(Boolean).join(', ');
+  if(tense)nodes.push(el('div',{},el('p',{class:'label',text:'Your word is'}),prose(tense,app,'prose')));
+  for(const [key,label] of [['dictionaryForm','Dictionary form (he, past)'],['presentForm','Present (he)'],['masdar','Masdar (verbal noun)'],['masdarWazn','Masdar wazn']])if(d.verb[key])nodes.push(el('div',{class:'verb-fact'},el('p',{class:'label',text:label}),arabic(d.verb[key])));
+  nodes.push(el('p',{class:'all-forms',text:'All 14 forms · tap a form to listen'}));
   const tableSlot=el('div',{});nodes.push(tableSlot);
-  if(list(d.verb.conjugation).length===14)tableSlot.append(conjugationTable(d));else tableSlot.append(button('Show 14×7 conjugations',()=>loadConjugations(d,tableSlot),'quiet'));
-  return section('Verb details',nodes,'verb',state.sections);
+  if(list(d.verb.conjugation).length===14)tableSlot.append(conjugationBlock(d));else tableSlot.append(button('Show 14×7 conjugations',()=>loadConjugations(d,tableSlot),'outlined full-width'));
+  return section('Verb details',nodes,'verb',state.sections,undefined,true);
 }
 async function loadConjugations(d,slot) {
   if(pendingSections.has('conjugations'))return;pendingSections.set('conjugations',true);
@@ -213,10 +227,11 @@ async function loadConjugations(d,slot) {
   try {
     const result=parseJSON(await ask(conjugationPrompt(d.verb.dictionaryForm||d.word),settings(),controller.signal));
     if(!Array.isArray(result.conjugation)||result.conjugation.length!==14||result.conjugation.some(x=>!x||typeof x!=='object'||!text(x.past).trim()||!text(x.present).trim()||Object.keys(TENSES).some(k=>!Object.hasOwn(x,k))))throw new ApiError('invalid_json');
-    if(generation!==state.generation)return;d.verb.conjugation=result.conjugation;saveData(d);slot.replaceChildren(conjugationTable(d));
+    if(generation!==state.generation)return;d.verb.conjugation=result.conjugation;saveData(d);slot.replaceChildren(conjugationBlock(d));
   }catch(e){if(generation===state.generation)slot.replaceChildren(sectionError(e.code==='invalid_json'?'The conjugation table was incomplete. Try again.':errorMessage(e),()=>loadConjugations(d,slot)));}
   finally{finishController(controller);if(generation===state.generation)pendingSections.delete('conjugations');}
 }
+function conjugationBlock(d){const node=section('Conjugation table',conjugationTable(d),'conjtable',state.sections,undefined,true);node.classList.add('nested-disclosure');return node;}
 function conjugationTable(d) {
   const columns=Object.keys(TENSES),table=el('table',{},el('caption',{class:'sr-only',text:'All 14 forms · tap a form to listen'}),el('thead',{},el('tr',{},el('th',{scope:'col',text:'Who'}),columns.map(k=>el('th',{scope:'col',text:TENSES[k]})))));
   table.append(el('tbody',{},PRONOUNS.map((p,i)=>el('tr',{class:[3,6,9,12].includes(i)?'group-start':''},el('th',{scope:'row',lang:'ar',raw:p}),columns.map(k=>{
@@ -246,29 +261,32 @@ function corpusCard(c,match) {
   return node;
 }
 function renderCompact() {
-  const box=$('#compact'),show=state.tab==='lookup'&&state.result&&!state.focused&&content.scrollTop>180;box.hidden=!show;if(!show){box.replaceChildren();return;}
-  box.replaceChildren(arabic(state.result.word),iconButton('listen','Listen',()=>speak(state.result.word)),button('Back to top',()=>content.scrollTo({top:0,behavior:reduced()?'auto':'smooth'}),'quiet'));
+  const show=state.tab==='lookup'&&state.result&&!state.focused&&!state.loading&&content.scrollTop>128*(parseFloat(getComputedStyle(document.documentElement).fontSize)/16);
+  const word=$('#header-word');word.hidden=!show;$('#title').hidden=!!show;
+  if(show){word.textContent=state.result.word;word.lang='ar';word.setAttribute('aria-label',state.result.word+' · '+t('Back to top'));}
 }
+$('#header-word').addEventListener('click',()=>content.scrollTo({top:0,behavior:reduced()?'auto':'smooth'}));
 content.addEventListener('scroll',renderCompact,{passive:true});
 
 function savedScreen() {
-  const body=el('div',{}),filter=el('input',{class:'field-input',type:'search',placeholder:'Filter saved words…','aria-label':'Filter saved words…',value:state.filter}),rows=el('div',{});
+  const body=el('div',{class:'saved-screen'}),filter=el('input',{class:'field-input',type:'search',placeholder:'Filter saved words…','aria-label':'Filter saved words…',value:state.filter}),rows=el('div',{class:'saved-rows'});
   const fill=()=>{const matches=state.filter.trim()?searchSaved(store.saved,state.filter,10000):store.saved;
     rows.replaceChildren(...(!store.saved.length?[el('p',{text:'No saved words yet. Look up a word and tap Save.'})]:!matches.length?[el('p',{text:'No saved words match that filter.'})]:matches.map(e=>wordRow(e,false))));};
   filter.addEventListener('input',()=>{state.filter=filter.value;fill();});fill();body.append(filter,rows,backupActions());return body;
 }
 function historyScreen() {
-  const body=el('div',{},el('h2',{text:'Recent searches'}));
+  const body=el('div',{class:'history-screen'});
   if(!store.recent.length)body.append(el('p',{text:'Your recent searches will appear here.'}));
   for(const word of store.recent){const entry=store.saved.find(e=>e.id===word);body.append(wordRow(entry||{id:word,data:{word}},true));}
   if(store.recent.length)body.append(button('Clear recent searches',()=>{storageAction(()=>store.clearHistory());render();},'quiet'));return body;
 }
 function wordRow(entry,historyOnly) {
-  const node=card(),word=arabic(entry.data.word);node.classList.add('list-row');node.dataset.id=entry.id;if(state.highlight===entry.id)node.classList.add('highlight');
+  const node=card(),word=arabic(entry.data.word);node.classList.add('list-row');if(historyOnly)node.classList.add('history-row');node.dataset.id=entry.id;if(state.highlight===entry.id)node.classList.add('highlight');
   let held=false;
   const open=()=>held?(held=false):historyOnly&&!store.saved.some(e=>e.id===entry.id)?openWord(entry.id):openSaved(entry,word);
-  const main=el('button',{type:'button',class:'open-word',onclick:open},word,entry.data.transliteration&&store.prefs.appLanguage!=='ar'?prose(entry.data.transliteration,'en','muted'):null,prose(shortMeaning(entry.data),store.prefs.appLanguage));
-  node.append(main,row(button('Preview',()=>preview(entry,historyOnly),'quiet'),iconButton('listen','Listen',()=>speak(entry.id)),!historyOnly?button('Remove',()=>remove(entry.id),'quiet danger'):null));
+  const visible=project(entry.data,store.prefs.appLanguage,store.prefs.lang);
+  const main=el('button',{type:'button',class:'open-word',onclick:open},word,!historyOnly&&entry.data.transliteration&&store.prefs.appLanguage!=='ar'?prose(entry.data.transliteration,'en','muted'):null,!historyOnly&&visible.data.partOfSpeech?el('p',{class:'pos',text:visible.data.partOfSpeech}):null,!historyOnly?prose(shortMeaning(entry.data),store.prefs.appLanguage,'prose'):null,!historyOnly?txLine(visible.translation.meaning):null);
+  const footer=row(historyOnly?el('span',{class:'study-hint',text:'Study word'}):null,button('Preview',()=>preview(entry,historyOnly),'quiet'),!historyOnly?button('Remove',()=>remove(entry.id),'quiet',{'aria-label':t('Remove')+' '+entry.id}):null);footer.classList.add('list-footer');node.append(main,footer);
   let timer,start;main.addEventListener('pointerdown',e=>{if(e.button!==0)return;start={x:e.clientX,y:e.clientY};timer=setTimeout(()=>{timer=null;held=true;preview(entry,historyOnly);},500);});
   main.addEventListener('pointermove',e=>{if(start&&(Math.abs(e.clientX-start.x)>8||Math.abs(e.clientY-start.y)>8)){clearTimeout(timer);timer=null;}});
   for(const event of ['pointerup','pointercancel','pointerleave'])main.addEventListener(event,()=>{clearTimeout(timer);});
@@ -281,10 +299,10 @@ function remove(id) {
   if(!reduced())for(const n of content.querySelectorAll('[data-id]')){const delta=before.get(n.dataset.id)-n.getBoundingClientRect().top;if(Number.isFinite(delta)&&delta)n.animate([{transform:`translateY(${delta}px)`},{transform:'none'}],{duration:260,easing:'cubic-bezier(.2,.8,.2,1)'});}
 }
 function preview(entry,historyOnly) {
-  blurSearch();const app=store.prefs.appLanguage,{data:v,translation:tx}=project(entry.data,app,store.prefs.lang);
-  const body=[arabic(entry.id,'preview-word'),v.meaning?.en?prose(v.meaning.en,app):null,entry.data.meaning?.ar?arabic(entry.data.meaning.ar):null,tx.meaning?prose(tx.meaning,store.prefs.lang,'trans'):null,
-    row(button('Study word',()=>{closeSheet(()=>historyOnly?openWord(entry.id):openSaved(entry));},'primary'),iconButton('listen','Listen',()=>speak(entry.id)),!historyOnly?button('Remove',()=>{if(storageAction(()=>store.remove(entry.id))){closeSheet();render();}},'quiet danger'):null)];
-  openSheet('Preview word',body.filter(Boolean));
+  blurSearch();const app=store.prefs.appLanguage,{data:v,translation:tx}=project(entry.data,app,store.prefs.lang),saved=store.saved.some(e=>e.id===entry.id);
+  const body=[arabic(entry.id,'preview-word'),v.partOfSpeech?el('p',{class:'muted',text:v.partOfSpeech}):null,v.meaning?.en?prose(v.meaning.en,app,'prose'):null,txLine(tx.meaning),
+    el('div',{class:'preview-actions'},button('Study word',()=>{closeSheet(()=>historyOnly?openWord(entry.id):openSaved(entry));},'primary'),button('Listen',()=>speak(entry.id),'outlined'),saved?button('Remove',()=>{if(storageAction(()=>store.remove(entry.id))){closeSheet();render();}},'quiet danger'):null,button('Close',()=>closeSheet(),'quiet'))];
+  openSheet('Preview word',body.filter(Boolean),()=>{},{centered:true,preview:true});
 }
 function backupActions() {
   const file=el('input',{type:'file',accept:'.json,application/json',hidden:true,'aria-label':'Import backup'});
@@ -292,12 +310,16 @@ function backupActions() {
     try{if(selected.size>20*1024*1024)throw Error('This backup is too large (maximum 20 MB).');const result=store.import(await selected.text());state.practice=null;render();notify(`Imported ${result.added} new words; updated ${result.updated} existing words. Your review progress was kept.`);}
     catch(e){notify(catalogs.en[e.message]?e.message:"Couldn't open that backup.");}finally{file.value='';}
   });
-  return card(row(button('Export backup',()=>download('kalima-backup-'+new Date().toISOString().slice(0,10)+'.json','application/json',store.export()),'quiet'),button('Export CSV',()=>download('kalima-words.csv','text/csv;charset=utf-8',csv(store.saved)),'quiet'),button('Import backup',()=>file.click(),'quiet')),file,
+  return el('section',{class:'card backup-actions'},row(button('Export backup',()=>download('kalima-backup-'+new Date().toISOString().slice(0,10)+'.json','application/json',store.export()),'outlined'),button('Export CSV',()=>download('kalima-words.csv','text/csv;charset=utf-8',csv(store.saved)),'outlined'),button('Import backup',()=>file.click(),'outlined')),file,
     el('p',{class:'muted',text:'Backups include saved words, translations, downloaded conjugations and review progress. Imports keep your existing words and progress. Account details are not included.'}));
 }
-function download(name,type,value) {
-  try{const url=URL.createObjectURL(new Blob([value],{type})),link=el('a',{href:url,download:name});document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);notify('File saved.');}
-  catch{notify("Couldn't save that file. Choose another location and try again.");}
+async function download(name,type,value) {
+  try{
+    const file=new File([value],name,{type});
+    if(navigator.canShare?.({files:[file]})){await navigator.share({files:[file]});return;}
+    if('showSaveFilePicker'in window){const handle=await showSaveFilePicker({suggestedName:name}),writer=await handle.createWritable();await writer.write(file);await writer.close();notify('File saved.');return;}
+    const url=URL.createObjectURL(file),link=el('a',{href:url,download:name});document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
+  }catch(e){if(e.name!=='AbortError')notify("Couldn't save that file. Choose another location and try again.");}
 }
 function speak(value) {
   if(!('speechSynthesis'in window)){notify("Arabic pronunciation isn't available yet. Check the Arabic voice in your phone's text-to-speech settings.");return;}
@@ -307,29 +329,30 @@ function speak(value) {
 
 function practiceEntries(){return store.saved.filter(e=>text(project(e.data,store.prefs.appLanguage).data.meaning?.en).trim());}
 function practiceScreen() {
-  const body=el('div',{});
+  const body=el('div',{class:'practice-screen'});
   if(!store.saved.length)return el('div',{},el('p',{text:'Save some words first, then practice them here.'}),button('Go to Lookup',()=>switchTab('lookup'),'primary'));
   if(!practiceEntries().length)return el('div',{},el('p',{text:'Translation not downloaded'}),button('Go to Lookup',()=>switchTab('lookup'),'primary'));
   body.append(el('p',{class:'counter',text:`${store.saved.length} saved · ${store.saved.filter(e=>e.due<=Date.now()).length} due now`}),row(...['flash','quiz'].map(mode=>button(mode==='flash'?'Flashcards':'Quiz',()=>{state.practiceMode=mode;state.practice=null;render();},state.practiceMode===mode?'primary':''))));
+  body.lastElementChild.classList.add('practice-modes');
   if(!state.practice)startPractice(false);
   const p=state.practice;
   if(state.practiceMode==='quiz')return renderQuiz(body,p);
   if(!p.queue.length)return el('div',{},body,el('p',{text:'Nothing is due right now. Come back later, or practice everything anyway.'}),button('Practice all words',()=>{startPractice(true);render();},'primary'));
   if(p.index>=p.queue.length)return el('div',{},body,el('p',{text:`Session finished. Words reviewed: ${p.reviewed}.`}),button('Start again',()=>{startPractice(true);render();},'primary'));
   const entry=store.saved.find(e=>e.id===p.queue[p.index]);if(!entry){p.index++;return practiceScreen();}
-  const {data:v,translation:tx}=project(entry.data,store.prefs.appLanguage,store.prefs.lang),scene=el('div',{class:'flash-scene'}),inner=el('div',{class:'flash-inner'+(p.flipped?' flipped':'')}),front=el('button',{type:'button',class:'flash-face front','aria-label':'Reveal meaning',onclick:()=>flip(true)},arabic(entry.id),el('p',{class:'muted',text:'Tap to reveal the meaning'})),back=el('button',{type:'button',class:'flash-face back','aria-label':'Show Arabic',onclick:()=>flip(false)},arabic(entry.id),prose(v.meaning?.en||'',store.prefs.appLanguage),store.prefs.lang!=='off'&&tx.meaning?prose(tx.meaning,store.prefs.lang):null);
+  const {data:v,translation:tx}=project(entry.data,store.prefs.appLanguage,store.prefs.lang),scene=el('div',{class:'flash-scene'}),inner=el('div',{class:'flash-inner'+(p.flipped?' flipped':'')}),front=el('button',{type:'button',class:'flash-face front','aria-label':'Reveal meaning',onclick:()=>flip(true)},arabic(entry.id),el('p',{class:'muted',text:'Tap to see the meaning'})),back=el('button',{type:'button',class:'flash-face back','aria-label':'Show Arabic',onclick:()=>flip(false)},arabic(entry.id),entry.data.transliteration&&store.prefs.appLanguage!=='ar'?prose(entry.data.transliteration,'en','muted'):null,prose(v.meaning?.en||'',store.prefs.appLanguage,'meaning'),txLine(tx.meaning),list(entry.data.root).length?el('p',{class:'flash-root',raw:t('Root')+': '+entry.data.root.join(' · ')}):null,v.examples?.[0]?el('div',{},arabic(v.examples[0].ar,'flash-example'),prose(v.examples[0].en||'',store.prefs.appLanguage,'muted')):null);
   inner.append(front,back);scene.append(inner);
-  function flip(value){p.flipped=value;inner.classList.toggle('flipped',value);front.tabIndex=value?-1:0;back.tabIndex=value?0:-1;front.setAttribute('aria-hidden',String(value));back.setAttribute('aria-hidden',String(!value));renderActions();}
-  const actions=row(iconButton('listen','Listen',()=>speak(entry.id))),progress=el('div',{class:'practice-progress','aria-hidden':'true'},el('span',{style:`width:${100*p.index/p.queue.length}%`}));
-  function grade(correct){if(state.busyGrade)return false;state.busyGrade=true;
+  function flip(value){p.flipped=value;p.flippingUntil=reduced()?0:performance.now()+300;inner.classList.toggle('flipped',value);front.tabIndex=value?-1:0;back.tabIndex=value?0:-1;front.setAttribute('aria-hidden',String(value));back.setAttribute('aria-hidden',String(!value));renderActions();}
+  const hint=el('p',{class:'flash-hint',text:p.flipped?'← Again     ·     Got it →':'Tap to reveal the meaning'}),actions=el('div',{class:'flash-actions'}),progress=el('div',{class:'practice-progress','aria-hidden':'true'},el('span',{style:`width:${100*p.index/p.queue.length}%`}));
+  function grade(correct){if(state.busyGrade||(!reduced()&&performance.now()<(p.flippingUntil||0)))return false;state.busyGrade=true;
     try {store.grade(entry.id,correct);if(!correct)p.queue.push(entry.id);p.index++;p.reviewed++;p.flipped=false;render();return true;}
     catch {notify("Couldn't save your words. Free some space on the phone and try again.");return false;}
     finally{state.busyGrade=false;}
   }
-  function renderActions(){actions.replaceChildren(iconButton('listen','Listen',()=>speak(entry.id)),...(p.flipped?[button('Again',()=>grade(false)),button('Got it',()=>grade(true),'primary')]:[button('Reveal meaning',()=>flip(true),'primary')]));}
+  function renderActions(){const wait=reduced()?0:Math.max(0,(p.flippingUntil||0)-performance.now());hint.textContent=t(p.flipped?'← Again     ·     Got it →':'Tap to reveal the meaning');actions.replaceChildren(...[button(p.flipped?'Show Arabic':'Reveal meaning',()=>flip(!p.flipped),'quiet'),p.flipped?el('div',{class:'grade-actions'},button('Again',()=>grade(false),'outlined',{disabled:wait>0}),button('Got it',()=>grade(true),'primary',{disabled:wait>0})):null,button('Listen',()=>speak(entry.id),'quiet')].filter(Boolean));if(wait>0)setTimeout(()=>{if(state.practice===p&&p.flipped)renderActions();},Math.ceil(wait)+1);}
   renderActions();front.tabIndex=p.flipped?-1:0;back.tabIndex=p.flipped?0:-1;front.setAttribute('aria-hidden',String(p.flipped));back.setAttribute('aria-hidden',String(!p.flipped));
   swipe(scene,x=>{if(Math.abs(x)>=scene.clientWidth*.28&&p.flipped){if(grade(x>0))return;}scene.style.transition=reduced()?'none':'transform .35s cubic-bezier(.2,1.4,.5,1)';scene.style.transform='';scene.style.boxShadow='';},x=>{scene.style.transition='none';scene.style.transform=`translateX(${x}px) rotate(${reduced()?0:x/60}deg)`;scene.style.boxShadow=reduced()?'':`0 ${Math.min(Math.abs(x)/10,16)}px 30px #0002`;},()=>p.flipped&&!state.busyGrade);
-  body.append(el('p',{class:'counter',text:`Card ${p.index+1} of ${p.queue.length}`}),progress,scene,actions);return body;
+  body.append(el('p',{class:'counter',text:`Card ${p.index+1} of ${p.queue.length}`}),progress,hint,scene,actions);return body;
 }
 function startPractice(all) {
   state.practice={queue:shuffle(practiceEntries().filter(e=>state.practiceMode==='quiz'||all||e.due<=Date.now())).map(e=>e.id),index:0,reviewed:0,flipped:false,score:0,question:null};
@@ -340,39 +363,52 @@ function renderQuiz(body,p) {
   if(p.index>=p.queue.length)return el('div',{},body,el('p',{text:`Score: ${p.score} out of ${p.queue.length}`}),button('New quiz',()=>{startPractice(true);render();},'primary'));
   const entry=store.saved.find(e=>e.id===p.queue[p.index]);if(!entry){p.index++;return practiceScreen();}
   if(!p.question)p.question={toMeaning:Math.random()<.5,options:shuffle([entry.id,...shuffle(practiceEntries().filter(e=>e.id!==entry.id)).slice(0,3).map(e=>e.id)]),answered:false,choice:null};
-  const q=p.question;body.append(el('p',{class:'counter',text:`Question ${p.index+1} of ${p.queue.length}`}),q.toMeaning?arabic(entry.id,'hero-word'):prose(shortMeaning(entry.data),store.prefs.appLanguage,'meaning'),el('p',{text:q.toMeaning?'What does this mean?':'Which Arabic word is this?'}));
+  const q=p.question;body.append(el('p',{class:'counter',text:`Question ${p.index+1} of ${p.queue.length}`}),el('div',{class:'practice-progress','aria-hidden':'true'},el('span',{style:`width:${100*(p.index+(q.answered?1:0))/p.queue.length}%`})),q.toMeaning?arabic(entry.id,'hero-word quiz-word'):prose(shortMeaning(entry.data),store.prefs.appLanguage,'meaning'),el('p',{class:'quiz-prompt',text:q.toMeaning?'What does this mean?':'Which Arabic word is this?'}));
   for(const id of q.options){const e=store.saved.find(e=>e.id===id);if(!e)continue;const option=el('button',{type:'button',class:'option'+(q.answered&&id===entry.id?' correct':q.answered&&q.choice===id?' wrong':''),disabled:q.answered,onclick:()=>{
     if(q.answered)return;
     try{store.grade(entry.id,id===entry.id);q.answered=true;q.choice=id;if(id===entry.id)p.score++;render();}
     catch{notify("Couldn't save your words. Free some space on the phone and try again.");}
   }},q.toMeaning?prose(shortMeaning(e.data),store.prefs.appLanguage):arabic(id));body.append(option);}
-  if(q.answered)body.append(button('Next',()=>{p.index++;p.question=null;render();},'primary'));return body;
+  if(q.answered)body.append(button(p.index+1>=p.queue.length?'See score':'Next',()=>{p.index++;p.question=null;render();},'primary'));return body;
 }
 
 function settingsScreen() {
-  const body=el('div',{}),group=(title,...items)=>el('section',{class:'settings-group'},el('h2',{text:title}),card(items));
-  const valueRow=(label,value,action)=>el('button',{type:'button',class:'value-row',onclick:action},el('span',{text:label}),el('span',{class:'value',text:value}));
-  body.append(group('General',valueRow('App language',LANGS[store.prefs.appLanguage],()=>choiceSheet('App language','Change all menus, messages and explanations.',Object.keys(LANGS).map(value=>({value,label:LANGS[value],native:NATIVE[value]})),store.prefs.appLanguage,value=>applyPrefs({appLanguage:value}))),
-    valueRow('Appearance',({light:'Light',dark:'Dark',system:'System'})[store.prefs.theme],()=>choiceSheet('Appearance','',Object.entries({system:'System',light:'Light',dark:'Dark'}).map(([value,label])=>({value,label})),store.prefs.theme,value=>applyPrefs({theme:value}))),
-    el('label',{class:'value-row'},el('span',{},el('span',{text:'Haptic feedback'}),el('p',{class:'muted',text:typeof navigator.vibrate==='function'?'Small taps for navigation, saving and Undo.':'Haptic feedback is not supported by this browser.'})),el('input',{type:'checkbox',checked:store.prefs.haptics,disabled:typeof navigator.vibrate!=='function',onchange:e=>{storageAction(()=>applyPrefs({haptics:e.target.checked}));}}))));
-  const key=el('input',{class:'field-input',type:'password',autocomplete:'off',placeholder:store.get('kalima_gemini_key_v1')?'Replace saved key':'Paste your key','aria-label':'Personal Gemini key'});
-  const keyDetails=section('Personal Gemini key',[el('p',{class:'muted',text:'Kalima works without a key. Add your own if shared access reaches its limit.'}),key,row(button('Save key',()=>{
-    if(!key.value.trim())return;try{localStorage.setItem('kalima_gemini_key_v1',key.value.trim());applyPrefs({access:'own'});notify('Personal key saved and enabled.');}catch{notify("Couldn't save your words. Free some space on the phone and try again.");}
-  },'quiet'),button('Remove key',()=>{try{localStorage.removeItem('kalima_gemini_key_v1');applyPrefs({access:'shared'});notify('Personal key removed. Kalima will use shared access.');}catch{notify("Couldn't save your words. Free some space on the phone and try again.");}},'quiet')),
-    store.get('kalima_gemini_key_v1')?el('label',{class:'value-row'},el('span',{text:'Use my personal key'}),el('input',{type:'checkbox',checked:store.prefs.access==='own',onchange:e=>storageAction(()=>applyPrefs({access:e.target.checked?'own':'shared'}))})):null],'key',state.sections);body.append(keyDetails,group('Your words and backups',backupActions()));
+  const body=el('div',{class:'settings-screen'},el('h2',{class:'screen-title',text:'Settings'}));
+  const group=(title,...items)=>el('section',{class:'settings-group'},title?el('h2',{text:title}):null,card(items));
+  const valueRow=(label,value,action)=>el('button',{type:'button',class:'value-row',onclick:action},el('span',{text:label}),value?el('span',{class:'value',text:value}):null,el('span',{class:'value-arrow','aria-hidden':'true',raw:RTL.has(store.prefs.appLanguage)?'‹':'›'}));
+  const divider=()=>el('hr',{class:'settings-divider'});
+  const disclosure=(title,key,children,value='')=>{
+    const node=section(title,children,key,state.sections);node.classList.add('settings-disclosure');
+    if(value)node.querySelector('summary').insertBefore(el('span',{class:'summary-value',text:value}),node.querySelector('.chevron'));return node;
+  };
+  const themes={system:'System',light:'Light',dark:'Dark'};
+  const appearance=disclosure('Appearance','appearance',el('div',{class:'segmented'},Object.entries(themes).map(([value,label])=>button(label,()=>storageAction(()=>applyPrefs({theme:value})),value===store.prefs.theme?'primary':'outlined',{'aria-pressed':String(value===store.prefs.theme)}))),themes[store.prefs.theme]);
+  body.append(group('General',
+    valueRow('App language',LANGS[store.prefs.appLanguage],()=>choiceSheet('App language','Change all menus, messages and explanations.',Object.keys(LANGS).map(value=>({value,label:LANGS[value],native:NATIVE[value]})),store.prefs.appLanguage,value=>applyPrefs({appLanguage:value}))),
+    el('p',{class:'settings-description',text:'Change all menus, messages and explanations.'}),divider(),appearance,divider(),
+    el('label',{class:'value-row'},el('span',{},el('span',{text:'Haptic feedback'}),el('p',{class:'settings-description',text:'Small taps for navigation, saving and Undo.'})),
+      el('input',{type:'checkbox',class:'switch',role:'switch',checked:store.prefs.haptics,disabled:typeof navigator.vibrate!=='function',title:typeof navigator.vibrate!=='function'?'Haptic feedback is not supported by this browser.':null,onchange:e=>storageAction(()=>applyPrefs({haptics:e.target.checked}))}))));
+  const hasKey=!!store.get('kalima_gemini_key_v1');
+  const key=el('input',{class:'field-input',type:'password',autocomplete:'off',placeholder:hasKey?'Replace saved key':'Paste your key','aria-label':'Personal Gemini key'});
+  const keyItems=[el('p',{class:'settings-description',text:'Kalima works without a key. Add your own if shared access reaches its limit.'}),key,
+    row(button('Save key',()=>{if(!key.value.trim())return;try{localStorage.setItem('kalima_gemini_key_v1',key.value.trim());applyPrefs({access:'own'});notify('Personal key saved and enabled.');}catch{notify("Couldn't save your words. Free some space on the phone and try again.");}},'quiet'),
+    hasKey?button('Remove key',()=>{try{localStorage.removeItem('kalima_gemini_key_v1');applyPrefs({access:'shared'});notify('Personal key removed. Kalima will use shared access.');}catch{notify("Couldn't save your words. Free some space on the phone and try again.");}},'quiet'):null)];
+  if(hasKey)keyItems.push(el('label',{class:'value-row'},el('span',{text:'Use my personal key'}),el('input',{type:'checkbox',class:'switch',role:'switch',checked:store.prefs.access==='own',onchange:e=>storageAction(()=>applyPrefs({access:e.target.checked?'own':'shared'}))})),el('p',{class:'settings-description',text:store.prefs.access==='own'?'Your lookups use your personal key.':'Your key is saved but switched off.'}));
+  body.append(group(null,disclosure('Personal Gemini key','key',keyItems,hasKey?(store.prefs.access==='own'?'On':'Off'):'Optional')),group('Your words and backups',backupActions()));
   const model=el('input',{class:'field-input',value:settings().model,'aria-label':'Gemini model'}),proxy=el('input',{class:'field-input',type:'url',value:settings().proxy,'aria-label':'Shared server address'});
-  body.append(section('Advanced',[el('label',{class:'field'},el('span',{text:'Gemini model'}),model),el('label',{class:'field'},el('span',{text:'Shared server address'}),proxy),row(button('Save configuration',()=>{
-    if(!/^https:\/\//i.test(proxy.value.trim())){notify('Use a secure server address starting with https://.');return;}
-    try{localStorage.setItem('kalima_gemini_model_v1',model.value.trim()||'gemini-2.5-flash');localStorage.setItem('kalima_proxy_v1',proxy.value.trim());notify('Configuration saved.');}catch{notify("Couldn't save your words. Free some space on the phone and try again.");}
-  },'quiet'),button('Restore defaults',()=>{try{localStorage.removeItem('kalima_gemini_model_v1');localStorage.removeItem('kalima_proxy_v1');render();notify('Default configuration restored.');}catch{notify("Couldn't save your words. Free some space on the phone and try again.");}},'quiet'))],'advanced',state.sections));
-  body.append(group('About',el('p',{raw:'Kalima · '+VERSION}),button('Check for updates',()=>checkWebUpdate(true),'quiet'),button('Install on your Home Screen',installHelp,'quiet'),el('p',{class:'muted',text:"Pronunciation uses your phone's Arabic voice. New lookups need internet; saved words and practice work offline."})));
+  body.append(group(null,disclosure('Advanced','advanced',[
+    el('label',{class:'field'},el('span',{text:'Gemini model'}),model),el('label',{class:'field'},el('span',{text:'Shared server address'}),proxy),
+    row(button('Save configuration',()=>{if(!/^https:\/\//i.test(proxy.value.trim())){notify('Use a secure server address starting with https://.');return;}try{localStorage.setItem('kalima_gemini_model_v1',model.value.trim()||'gemini-2.5-flash');localStorage.setItem('kalima_proxy_v1',proxy.value.trim());notify('Configuration saved.');}catch{notify("Couldn't save your words. Free some space on the phone and try again.");}},'quiet'),
+    button('Restore defaults',()=>{try{localStorage.removeItem('kalima_gemini_model_v1');localStorage.removeItem('kalima_proxy_v1');render();notify('Default configuration restored.');}catch{notify("Couldn't save your words. Free some space on the phone and try again.");}},'quiet'))])));
+  body.append(group('About',el('p',{class:'settings-description',text:'Kalima · 0.9'}),valueRow('Check for updates','',()=>checkWebUpdate(true)),
+    el('p',{class:'settings-description',text:"Pronunciation uses your phone's Arabic voice. New lookups need internet; saved words and practice work offline."})));
   return body;
 }
 function installHelp(){openSheet('Install on your Home Screen',el('p',{text:'On iPhone: open Kalima in Safari, tap Share, then Add to Home Screen. Turn on Open as Web App if shown. On Android, use Install app in your browser menu.'}));}
 
 $('#clear').addEventListener('click',clear);$('#save-pill').addEventListener('click',toggleSave);$('#history').addEventListener('click',()=>switchTab('history'));
 $('#search-pill').addEventListener('click',()=>choiceSheet('Search','',[{value:'ar',label:'Arabic word'},{value:'rev',label:'Reverse search'}],state.searchMode,value=>{state.searchMode=value;sync();}));
-$('#depth-pill').addEventListener('click',()=>choiceSheet('Search depth','Choose how much detail to request.',[{value:'fast',label:'Fast'},{value:'deep',label:'Deep'}],state.depth,value=>{state.depth=value;sync();}));
+$('#depth-pill').addEventListener('click',()=>choiceSheet('Search depth','',[{value:'fast',label:'Fast'},{value:'deep',label:'Deep'}],state.depth,value=>{state.depth=value;sync();}));
 $('#language-pill').addEventListener('click',()=>choiceSheet('Extra translation','Add a translation alongside Arabic and your app language.',[...extraLanguages(store.prefs.appLanguage).map(value=>({value,label:LANGS[value],native:NATIVE[value]})),{value:'off',label:'Off'}],store.prefs.lang,value=>applyPrefs({lang:value})));
 $('#search-form').addEventListener('submit',event=>{event.preventDefault();runLookup();});
 query.addEventListener('input',()=>{state.query=query.value;$('#submit').disabled=!query.value.trim()||state.loading;if(state.focused&&state.tab==='lookup')render();else sync();});
@@ -395,7 +431,7 @@ async function checkWebUpdate(manual=false) {
 function offerUpdate(worker,manual=false) {
   if(manual)updateOffered=false;
   if(updateOffered)return;if($('#sheet').open){pendingUpdate=worker;return;}updateOffered=true;
-  const later=()=>closeSheet();openSheet('A Kalima update is available',[el('p',{text:'A new web version is ready. Your saved words and review progress will be kept.'}),row(button('Later',later,'quiet'),button('Update',()=>{updateAccepted=true;worker.postMessage({type:'ACTIVATE_UPDATE'});},'primary'))]);
+  const later=()=>closeSheet();openSheet('A Kalima update is available',[el('p',{text:'A new web version is ready. Your saved words and review progress will be kept.'}),row(button('Later',later,'quiet'),button('Update',()=>{updateAccepted=true;worker.postMessage({type:'ACTIVATE_UPDATE'});},'primary'))],()=>{},{centered:true});
 }
 if('serviceWorker'in navigator&&['https:','http:'].includes(location.protocol)){
   navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(reg=>{registration=reg;if(reg.waiting)offerUpdate(reg.waiting);reg.addEventListener('updatefound',()=>{const worker=reg.installing;worker?.addEventListener('statechange',()=>{if(worker.state==='installed'&&navigator.serviceWorker.controller)offerUpdate(worker);});});}).catch(()=>{});
