@@ -47,3 +47,33 @@ th,td{width:160px;min-width:160px;padding:12px}th:first-child{width:184px;min-wi
 @container(max-width:18rem){#pills{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(prefers-reduced-motion:reduce){.switch:before{transition:none}dialog.centered .sheet-panel{animation:none}}
 @media(prefers-contrast:more){.muted,.label,.settings-description,.settings-group>h2,.counter{color:var(--ink)!important}.pill>.pill-face{border:1px solid currentColor}}
+
+/* Kalima 1.0: the approved sentence screens and retargetable spring motion. */
+.mode-switch{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:20px}
+.mode-switch>button{width:100%;min-height:48px;padding:10px 12px;background:var(--surface);border:1px solid var(--line);color:var(--ink)}
+.mode-switch>button[aria-pressed=true]{background:var(--fill);color:var(--on-fill)}
+.sentence-screen,.sentence-history-screen{display:flex;flex-direction:column;gap:20px}
+.sentence-screen>.mode-switch{margin-bottom:0}.grammar-arabic{font-family:Amiri,serif!important;font-size:1.3125rem;line-height:2.25rem;text-align:right;overflow-wrap:anywhere;margin:0;color:var(--ink)}
+.grammar-arabic.prominent{font-size:1.75rem;line-height:3rem;color:var(--primary)}
+.sentence-screen .card{gap:10px}.sentence-word-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.sentence-word{min-width:0;padding:16px;text-align:center;gap:8px!important}.sentence-word.phrase{grid-column:1/-1}
+.sentence-word .grammar-arabic{text-align:center}.sentence-latin{font-size:1rem;color:var(--primary);text-align:center;overflow-wrap:anywhere}
+.sentence-meaning{font-size:1.0625rem;line-height:1.875rem;text-align:center;overflow-wrap:anywhere}.sentence-meaning:lang(ar),.sentence-meaning:lang(fa),.sentence-meaning:lang(ur){font-size:1.25rem}.sentence-meaning:lang(ur){line-height:2.625rem}
+.sentence-history-item{display:flex;flex-direction:column;text-align:start;font-weight:400;min-height:48px;width:100%;gap:8px}.sentence-history-item .grammar-arabic{width:100%}
+.section-body{padding:0!important;display:block!important}.section-inner{display:flex;flex-direction:column;gap:12px;padding:12px 0}
+.sheet-panel,dialog.closing .sheet-panel,dialog.centered .sheet-panel,dialog.centered.closing .sheet-panel{animation:none!important;transition:none!important}
+.grabber{position:relative;touch-action:none;cursor:grab}.grabber:before{content:'';position:absolute;inset:-20px -50px}
+button,summary{transition-property:background-color,color,border-color,opacity;transform-origin:center}
+@media(min-width:700px){.sentence-word-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:340px){.sentence-word-grid{grid-template-columns:minmax(0,1fr)}}
+@media(prefers-reduced-motion:reduce){button,summary{scale:1!important}}
+@media(prefers-reduced-transparency:reduce){#navigation{backdrop-filter:none;-webkit-backdrop-filter:none;background:var(--nav)}#lens{background:var(--accent)}}
+
+.flash-inner,.flash-scene{transition:none}
+@media(min-width:700px){.sentence-screen{max-width:100%}}
+
+.sentence-word-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,9rem),1fr))}
+@media(min-width:700px){.sentence-word-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,11rem),1fr))}}
+#navigation svg[fill="none"]{fill:none}
+summary[aria-expanded="false"] .chevron{transform:rotate(0deg)}
+summary[aria-expanded="true"] .chevron{transform:rotate(180deg)}

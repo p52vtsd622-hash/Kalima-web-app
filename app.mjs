@@ -1,3 +1,5 @@
+import {SentenceSession,SentenceHistory,inputError} from './sentence.mjs';
+import {Spring,installPressMotion} from './spring.mjs';
 import {VERSION,LANGS,NATIVE,RTL,clone,text,list,object,normalize,extraLanguages,translator,project,Store,SuggestionDeck,searchSaved,shuffle,csv,normalizeData} from './core.mjs';
 import {ask,parseJSON,rootRequest,rootsPrompt,lookupPrompt,reversePrompt,translationPrompt,conjugationPrompt,PRONOUNS,TENSES,ApiError,errorMessage} from './api.mjs';
 import {el,arabic,prose,button,row,card,icon,iconButton,section,loading,sectionError,openSheet,closeSheet,choiceSheet,setTranslator,swipe,animateWord,wordSnapshot,cancelWordMotion,reduced} from './ui.mjs';
@@ -12,6 +14,11 @@ let t=translator(catalogs,store.prefs.appLanguage);setTranslator(t);
 const deck=new SuggestionDeck(words,store.get('kalima_last_suggestion_v1'));
 const state={tab:'lookup',result:null,candidates:null,query:'',searchMode:'ar',depth:'deep',focused:false,loading:false,error:null,generation:0,controllers:new Set(),sections:new Map(),filter:'',scroll:{},source:null,highlight:null,practice:null,practiceMode:'flash',busyGrade:false};
 const pendingSections=new Map();
+let sentenceView='grammar',learnMode='saved';const sentenceScroll={grammar:0,words:0};
+const sentenceHistory=new SentenceHistory(store.storage);
+const sentence=new SentenceSession((prompt,signal)=>ask(prompt,settings(),signal),()=>{if(state.tab==='grammar')render();},value=>storageAction(()=>sentenceHistory.add(value)));
+const isSentence=()=>['grammar','sentence_history'].includes(state.tab);
+installPressMotion();
 const settings=()=>({access:store.prefs.access,key:store.get('kalima_gemini_key_v1'),model:store.get('kalima_gemini_model_v1')||'gemini-2.5-flash',proxy:store.get('kalima_proxy_v1')||globalThis.KALIMA_PROXY||'https://kalima.wyp44cctp8.workers.dev'});
 function notify(message) {
   const box=$('#notice');box.hidden=!message;box.replaceChildren();
@@ -27,6 +34,7 @@ function finishController(c){state.controllers.delete(c);}
 function applyPrefs(patch) {
   const next={...store.prefs,...patch};if(!extraLanguages(next.appLanguage).includes(next.lang))next.lang='off';
   store.savePrefs(next);invalidate();t=translator(catalogs,next.appLanguage);setTranslator(t);state.practice=null;state.error=null;
+  if(sentence.submitted)sentence.request('words',next.appLanguage);
   sync();render();
 }
 const selectNav=navigation(tab=>switchTab(tab));
@@ -42,15 +50,15 @@ function sync() {
   $('#depth-pill').textContent=t(state.depth==='fast'?'Fast':'Deep');$('#language-pill').textContent=NATIVE[store.prefs.lang]||t('Off');
   for(const id of ['search-pill','depth-pill','language-pill']){const p=$('#'+id),label=p.textContent;p.replaceChildren(el('span',{class:'pill-face'},el('span',{class:'pill-label',raw:label})));}
   $('#language-pill').setAttribute('aria-label',t('Extra translation')+': '+t(LANGS[store.prefs.lang]||'Off'));
-  query.classList.toggle('reverse',state.searchMode==='rev');query.dir=state.searchMode==='rev'?(RTL.has(app)?'rtl':'ltr'):'rtl';query.lang=state.searchMode==='rev'?app:'ar';
-  query.placeholder=t(state.searchMode==='rev'?'Find Arabic for...':'Type an Arabic word…');$('#query-label').textContent=t('Search');$('#submit').setAttribute('aria-label',t('Search'));$('#submit').disabled=!query.value.trim()||state.loading;
-  const title=state.tab==='lookup'?(state.result?'Translations':'Kalima'):({saved:'Saved words',practice:'Practice',settings:'Settings',history:'Recent searches'})[state.tab];
-  $('#title').textContent=t(title);$('#clear').textContent=t('Clear');$('#clear').hidden=state.tab!=='lookup'||!(state.query||state.result||state.loading||state.error||state.candidates);
+  query.classList.toggle('reverse',!isSentence()&&state.searchMode==='rev');query.dir=!isSentence()&&state.searchMode==='rev'?(RTL.has(app)?'rtl':'ltr'):'rtl';query.lang=!isSentence()&&state.searchMode==='rev'?app:'ar';query.maxLength=isSentence()?601:80;
+  query.placeholder=t(isSentence()?'Type an Arabic sentence…':state.searchMode==='rev'?'Find Arabic for...':'Type an Arabic word…');$('#query-label').textContent=t(isSentence()?'Analyse sentence':'Search');$('#submit').setAttribute('aria-label',t(isSentence()?'Analyse sentence':'Search'));$('#submit').disabled=!query.value.trim()||(!isSentence()&&state.loading);
+  const title=state.tab==='lookup'?(state.result?'Translations':'Kalima'):({learn:'Learn',saved:'Learn',practice:'Learn',grammar:'Grammar',sentence_history:'Sentence history',settings:'Settings',history:'Recent searches'})[state.tab];
+  $('#title').textContent=t(title);$('#clear').textContent=t('Clear');$('#clear').hidden=isSentence()?!(sentence.query||sentence.submitted):state.tab!=='lookup'||!(state.query||state.result||state.loading||state.error||state.candidates);
   $('#title').classList.toggle('home-title',title==='Kalima');
-  $('#history').setAttribute('aria-label',t('Recent searches'));
-  $('#pills').hidden=state.focused&&state.tab==='lookup';
-  for(const b of document.querySelectorAll('#navigation>button'))b.setAttribute('aria-label',t(({lookup:'Lookup',saved:'Saved words',practice:'Practice',settings:'Settings'})[b.dataset.tab]));
-  selectNav(state.tab);renderUndo();renderCompact();
+  $('#history').setAttribute('aria-label',t(isSentence()?'Sentence history':'Recent searches'));$('#history').hidden=!['lookup','grammar'].includes(state.tab);
+  $('#pills').hidden=isSentence()||state.focused&&state.tab==='lookup';
+  for(const b of document.querySelectorAll('#navigation>button'))b.setAttribute('aria-label',t(({lookup:'Lookup',learn:'Learn',grammar:'Grammar',settings:'Settings'})[b.dataset.tab]));
+  selectNav(['learn','saved','practice'].includes(state.tab)?'learn':state.tab==='sentence_history'?'grammar':state.tab);renderUndo();renderCompact();
 }
 function renderUndo() {
   const box=$('#undo'),change=store.undo.at(-1);box.hidden=!change;box.replaceChildren();if(!change)return;
@@ -63,19 +71,20 @@ function renderUndo() {
 function blurSearch(){state.focused=false;query.blur();}
 function refreshSuggestion(){deck.refresh();try{localStorage.setItem('kalima_last_suggestion_v1',deck.at(0).arabic);}catch{}}
 function switchTab(tab,push=true) {
+  if(tab==='practice'){learnMode='practice';tab='learn';}else if(tab==='saved'){learnMode='saved';tab='learn';}
   if(state.tab!==tab){state.scroll[state.tab]=content.scrollTop;if(tab==='lookup')refreshSuggestion();}
-  blurSearch();state.tab=tab;
+  blurSearch();state.tab=tab;query.value=isSentence()?sentence.query:state.query;
   if(push&&history.state?.tab!==tab)history.pushState({tab},'');
   sync();render(true);haptic();
 }
 function render(restore=false) {
   const scroll=restore?(state.scroll[state.tab]||0):content.scrollTop;
   let body;
-  if(state.tab==='saved')body=savedScreen();else if(state.tab==='history')body=historyScreen();else if(state.tab==='practice')body=practiceScreen();else if(state.tab==='settings')body=settingsScreen();else body=lookupScreen();
+  if(['learn','saved','practice'].includes(state.tab))body=learnScreen();else if(state.tab==='grammar')body=grammarScreen();else if(state.tab==='sentence_history')body=sentenceHistoryScreen();else if(state.tab==='history')body=historyScreen();else if(state.tab==='settings')body=settingsScreen();else body=lookupScreen();
   content.replaceChildren(body);content.scrollTop=scroll;sync();renderCompact();
 }
 function incoming(node){node.classList.add('incoming');return node;}
-function clear() {invalidate();blurSearch();state.query='';query.value='';state.result=null;state.candidates=null;state.error=null;state.source=null;state.sections.clear();refreshSuggestion();state.tab='lookup';content.scrollTop=0;render();}
+function clear() {if(isSentence()){sentence.clear();query.value='';state.tab='grammar';content.scrollTop=0;render();return;}invalidate();blurSearch();state.query='';query.value='';state.result=null;state.candidates=null;state.error=null;state.source=null;state.sections.clear();refreshSuggestion();state.tab='lookup';content.scrollTop=0;render();}
 function toggleSave() {
   const d=state.result;if(!d)return;
   const saved=store.saved.some(e=>e.id===d.word);
@@ -92,7 +101,7 @@ function lookupScreen() {
   if(state.result)return resultScreen(state.result);
   body.append(suggestionCard());
   const due=store.saved.filter(e=>e.due<=Date.now()).length;
-  if(due)body.append(el('button',{type:'button',class:'card continuation',onclick:()=>{state.practiceMode='flash';state.practice=null;switchTab('practice');}},el('span',{text:'Continue learning'}),el('strong',{text:`Review ${due} ${due===1?'word':'words'}`})));
+  if(due)body.append(el('button',{type:'button',class:'card continuation',onclick:()=>{state.practiceMode='flash';state.practice=null;learnMode='practice';switchTab('learn');}},el('span',{text:'Continue learning'}),el('strong',{text:`Review ${due} ${due===1?'word':'words'}`})));
   else if(store.recent.length)body.append(el('section',{class:'card recent-card'},el('h2',{text:'Recent searches'}),el('div',{class:'word-list'},store.recent.slice(0,3).map(w=>button(w,()=>openWord(w))))));
   return incoming(body);
 }
@@ -268,6 +277,51 @@ function renderCompact() {
 $('#header-word').addEventListener('click',()=>content.scrollTo({top:0,behavior:reduced()?'auto':'smooth'}));
 content.addEventListener('scroll',renderCompact,{passive:true});
 
+function learnScreen(){
+ const body=el('div',{class:'learn-screen'}),modes=el('div',{class:'segmented mode-switch',role:'group','aria-label':'Learn'});
+ for(const [value,label]of [['saved','Saved words'],['practice','Practice']])modes.append(button(label,()=>{state.scroll['learn-'+learnMode]=content.scrollTop;learnMode=value;render();content.scrollTop=state.scroll['learn-'+value]||0;},'',{'aria-pressed':String(learnMode===value)}));
+ body.append(modes,learnMode==='saved'?savedScreen():practiceScreen());return body;
+}
+const grammarArabic=(value,prominent=false)=>arabic(value,'grammar-arabic'+(prominent?' prominent':''));
+function grammarScreen(){
+ const body=el('div',{class:'sentence-screen'}),tabs=el('div',{class:'segmented mode-switch',role:'group','aria-label':'Grammar'});
+ for(const [value,label]of [['words','Words'],['grammar','Grammar']])tabs.append(button(label,()=>{sentenceScroll[sentenceView]=content.scrollTop;sentenceView=value;if(value==='words'&&sentence.submitted)sentence.request('words',store.prefs.appLanguage);render();content.scrollTop=sentenceScroll[value];},'',{'aria-pressed':String(sentenceView===value)}));
+ body.append(tabs);
+ if(sentenceView==='words'&&sentence.submitted){body.append(...sentenceWordsContent());return body;}
+ const g=sentence.grammar;
+ if(!g.result&&!g.loading&&!g.error){body.append(card(el('h2',{text:'Understand the whole sentence'}),el('p',{class:'muted',text:'Type or paste an Arabic sentence below. Switch between word meanings and Arabic grammar.'}),grammarArabic('كَتَبَ الطَّالِبُ الدَّرْسَ.',true),button('Use this example',()=>{sentence.edit('كَتَبَ الطَّالِبُ الدَّرْسَ.');query.value=sentence.query;render();},'quiet'),el('p',{class:'muted',text:'AI-generated analysis. More than one grammatical reading may be possible.'}),el('p',{class:'muted',text:'Use up to 40 words and 600 characters.'})));}
+ if(g.loading)body.append(card(grammarArabic(sentence.query),loading('Analysing sentence…'),button('Cancel',()=>sentence.stop('grammar'),'quiet')));
+ if(g.error)body.append(sectionError(g.error,()=>{if(sentence.submitted)sentence.request('grammar',store.prefs.appLanguage,true);else sentence.submit(store.prefs.appLanguage);}));
+ if(g.result){const r=g.result;body.append(card(el('p',{class:'label',text:'Grammar'}),grammarArabic(r.original,true),button('Listen',()=>speak(r.original),'quiet'),el('p',{class:'muted',text:'AI-generated analysis. More than one grammatical reading may be possible.'})),card(el('h2',{text:'Sentence structure'}),grammarArabic(r.overview)));
+  for(const x of r.rows)body.append(card(grammarArabic(x.text,true),grammarArabic(x.analysis)));
+  if(r.clauses.length)body.append(section('Phrases and clauses',r.clauses.map(x=>el('div',{},grammarArabic(x.text,true),grammarArabic(x.analysis))),'sentence-clauses',state.sections,null,true));
+  if(r.alternatives.length)body.append(section('Possible readings',r.alternatives.map(x=>grammarArabic(x)),'sentence-alternatives',state.sections,null,true));
+  body.append(button('Analyse again',()=>sentence.request('grammar',store.prefs.appLanguage,true),'quiet'));
+ }
+ return body;
+}
+function sentenceWordsContent(){
+ const s=sentence.words,lang=store.prefs.appLanguage;
+ const nodes=[card(el('p',{class:'label',text:'Words'}),grammarArabic(sentence.submitted,true),button('Listen',()=>speak(sentence.submitted),'quiet'),el('p',{class:'muted',text:'AI-generated contextual meanings.'}))];
+ if(s.loading)nodes.push(loading('Loading word meanings…'),button('Cancel',()=>sentence.stop('words'),'quiet'));
+ if(s.error)nodes.push(sectionError(s.error,()=>sentence.request('words',lang,true)));
+ if(s.result&&s.result.language===lang&&s.result.sentence===sentence.submitted){
+  const grid=el('div',{class:'sentence-word-grid',dir:'rtl'});
+  for(const item of s.result.items){const node=card(grammarArabic(item.ar,true),prose(item.transliteration,'en','sentence-latin'),prose(item.meaning,lang,'sentence-meaning'),button('Listen',()=>speak(item.ar),'quiet',{'aria-label':t('Listen')+': '+item.ar}));node.classList.add('sentence-word');if(item.ar.trim().split(/\s+/u).length>1)node.classList.add('phrase');grid.append(node);}
+  nodes.push(grid,button('Refresh meanings',()=>sentence.request('words',lang,true),'quiet'));
+ }else if(!s.loading&&!s.error)nodes.push(button('Load word meanings',()=>sentence.request('words',lang),'quiet'));
+ return nodes;
+}
+function sentenceHistoryScreen(){
+ const body=el('div',{class:'sentence-history-screen'},button('Back',()=>switchTab('grammar'),'quiet'));
+ if(sentenceHistory.undo)body.append(card(row(el('p',{class:'grow',text:'Sentence history cleared'}),button('Undo',()=>{storageAction(()=>sentenceHistory.restore());render();},'quiet'))));
+ if(!sentenceHistory.items.length)body.append(el('p',{class:'muted',text:'Your analysed sentences will appear here.'}));
+ else {body.append(button('Clear recent searches',()=>{storageAction(()=>sentenceHistory.clear());render();},'quiet'),el('p',{class:'muted',text:'Tap a sentence to analyse it again.'}));
+  for(const value of sentenceHistory.items)body.append(el('button',{class:'card sentence-history-item',type:'button','aria-label':t('Analyse sentence')+': '+value,onclick:()=>{sentence.edit(value);query.value=value;switchTab('grammar');sentence.submit(store.prefs.appLanguage);content.scrollTop=0;}},grammarArabic(value,true),el('span',{class:'label',text:'Analyse sentence'})));
+ }
+ return body;
+}
+
 function savedScreen() {
   const body=el('div',{class:'saved-screen'}),filter=el('input',{class:'field-input',type:'search',placeholder:'Filter saved words…','aria-label':'Filter saved words…',value:state.filter}),rows=el('div',{class:'saved-rows'});
   const fill=()=>{const matches=state.filter.trim()?searchSaved(store.saved,state.filter,10000):store.saved;
@@ -342,7 +396,9 @@ function practiceScreen() {
   const entry=store.saved.find(e=>e.id===p.queue[p.index]);if(!entry){p.index++;return practiceScreen();}
   const {data:v,translation:tx}=project(entry.data,store.prefs.appLanguage,store.prefs.lang),scene=el('div',{class:'flash-scene'}),inner=el('div',{class:'flash-inner'+(p.flipped?' flipped':'')}),front=el('button',{type:'button',class:'flash-face front','aria-label':'Reveal meaning',onclick:()=>flip(true)},arabic(entry.id),el('p',{class:'muted',text:'Tap to see the meaning'})),back=el('button',{type:'button',class:'flash-face back','aria-label':'Show Arabic',onclick:()=>flip(false)},arabic(entry.id),entry.data.transliteration&&store.prefs.appLanguage!=='ar'?prose(entry.data.transliteration,'en','muted'):null,prose(v.meaning?.en||'',store.prefs.appLanguage,'meaning'),txLine(tx.meaning),list(entry.data.root).length?el('p',{class:'flash-root',raw:t('Root')+': '+entry.data.root.join(' · ')}):null,v.examples?.[0]?el('div',{},arabic(v.examples[0].ar,'flash-example'),prose(v.examples[0].en||'',store.prefs.appLanguage,'muted')):null);
   inner.append(front,back);scene.append(inner);
-  function flip(value){p.flipped=value;p.flippingUntil=reduced()?0:performance.now()+300;inner.classList.toggle('flipped',value);front.tabIndex=value?-1:0;back.tabIndex=value?0:-1;front.setAttribute('aria-hidden',String(value));back.setAttribute('aria-hidden',String(!value));renderActions();}
+  const flipSpring=new Spring(p.flipped?180:0,value=>{if(!inner.isConnected&&flipSpring.frame){flipSpring.cancel();return;}inner.style.transform=reduced()?'none':`rotateY(${value}deg)`;},{stiffness:420,damping:38});
+  const swipeSpring=new Spring(0,value=>{scene.style.transform=`translateX(${value}px) rotate(${reduced()?0:value/60}deg)`;},{stiffness:420,damping:36});
+  function flip(value){p.flipped=value;p.flippingUntil=reduced()?0:performance.now()+300;inner.classList.toggle('flipped',value);flipSpring.to(value?180:0);front.tabIndex=value?-1:0;back.tabIndex=value?0:-1;front.setAttribute('aria-hidden',String(value));back.setAttribute('aria-hidden',String(!value));renderActions();}
   const hint=el('p',{class:'flash-hint',text:p.flipped?'← Again     ·     Got it →':'Tap to reveal the meaning'}),actions=el('div',{class:'flash-actions'}),progress=el('div',{class:'practice-progress','aria-hidden':'true'},el('span',{style:`width:${100*p.index/p.queue.length}%`}));
   function grade(correct){if(state.busyGrade||(!reduced()&&performance.now()<(p.flippingUntil||0)))return false;state.busyGrade=true;
     try {store.grade(entry.id,correct);if(!correct)p.queue.push(entry.id);p.index++;p.reviewed++;p.flipped=false;render();return true;}
@@ -351,7 +407,7 @@ function practiceScreen() {
   }
   function renderActions(){const wait=reduced()?0:Math.max(0,(p.flippingUntil||0)-performance.now());hint.textContent=t(p.flipped?'← Again     ·     Got it →':'Tap to reveal the meaning');actions.replaceChildren(...[button(p.flipped?'Show Arabic':'Reveal meaning',()=>flip(!p.flipped),'quiet'),p.flipped?el('div',{class:'grade-actions'},button('Again',()=>grade(false),'outlined',{disabled:wait>0}),button('Got it',()=>grade(true),'primary',{disabled:wait>0})):null,button('Listen',()=>speak(entry.id),'quiet')].filter(Boolean));if(wait>0)setTimeout(()=>{if(state.practice===p&&p.flipped)renderActions();},Math.ceil(wait)+1);}
   renderActions();front.tabIndex=p.flipped?-1:0;back.tabIndex=p.flipped?0:-1;front.setAttribute('aria-hidden',String(p.flipped));back.setAttribute('aria-hidden',String(!p.flipped));
-  swipe(scene,x=>{if(Math.abs(x)>=scene.clientWidth*.28&&p.flipped){if(grade(x>0))return;}scene.style.transition=reduced()?'none':'transform .35s cubic-bezier(.2,1.4,.5,1)';scene.style.transform='';scene.style.boxShadow='';},x=>{scene.style.transition='none';scene.style.transform=`translateX(${x}px) rotate(${reduced()?0:x/60}deg)`;scene.style.boxShadow=reduced()?'':`0 ${Math.min(Math.abs(x)/10,16)}px 30px #0002`;},()=>p.flipped&&!state.busyGrade);
+  swipe(scene,x=>{if(Math.abs(x)>=scene.clientWidth*.28&&p.flipped){if(grade(x>0))return;}swipeSpring.to(0);scene.style.boxShadow='';},x=>{swipeSpring.set(x);scene.style.boxShadow=reduced()?'':`0 ${Math.min(Math.abs(x)/10,16)}px 30px #0002`;},()=>p.flipped&&!state.busyGrade);
   body.append(el('p',{class:'counter',text:`Card ${p.index+1} of ${p.queue.length}`}),progress,hint,scene,actions);return body;
 }
 function startPractice(all) {
@@ -400,18 +456,18 @@ function settingsScreen() {
     el('label',{class:'field'},el('span',{text:'Gemini model'}),model),el('label',{class:'field'},el('span',{text:'Shared server address'}),proxy),
     row(button('Save configuration',()=>{if(!/^https:\/\//i.test(proxy.value.trim())){notify('Use a secure server address starting with https://.');return;}try{localStorage.setItem('kalima_gemini_model_v1',model.value.trim()||'gemini-2.5-flash');localStorage.setItem('kalima_proxy_v1',proxy.value.trim());notify('Configuration saved.');}catch{notify("Couldn't save your words. Free some space on the phone and try again.");}},'quiet'),
     button('Restore defaults',()=>{try{localStorage.removeItem('kalima_gemini_model_v1');localStorage.removeItem('kalima_proxy_v1');render();notify('Default configuration restored.');}catch{notify("Couldn't save your words. Free some space on the phone and try again.");}},'quiet'))])));
-  body.append(group('About',el('p',{class:'settings-description',text:'Kalima · 0.9'}),valueRow('Check for updates','',()=>checkWebUpdate(true)),
+  body.append(group('About',el('p',{class:'settings-description',text:'Kalima · 1.0'}),valueRow('Check for updates','',()=>checkWebUpdate(true)),
     el('p',{class:'settings-description',text:"Pronunciation uses your phone's Arabic voice. New lookups need internet; saved words and practice work offline."})));
   return body;
 }
 function installHelp(){openSheet('Install on your Home Screen',el('p',{text:'On iPhone: open Kalima in Safari, tap Share, then Add to Home Screen. Turn on Open as Web App if shown. On Android, use Install app in your browser menu.'}));}
 
-$('#clear').addEventListener('click',clear);$('#save-pill').addEventListener('click',toggleSave);$('#history').addEventListener('click',()=>switchTab('history'));
+$('#clear').addEventListener('click',clear);$('#save-pill').addEventListener('click',toggleSave);$('#history').addEventListener('click',()=>switchTab(isSentence()?'sentence_history':'history'));
 $('#search-pill').addEventListener('click',()=>choiceSheet('Search','',[{value:'ar',label:'Arabic word'},{value:'rev',label:'Reverse search'}],state.searchMode,value=>{state.searchMode=value;sync();}));
 $('#depth-pill').addEventListener('click',()=>choiceSheet('Search depth','',[{value:'fast',label:'Fast'},{value:'deep',label:'Deep'}],state.depth,value=>{state.depth=value;sync();}));
 $('#language-pill').addEventListener('click',()=>choiceSheet('Extra translation','Add a translation alongside Arabic and your app language.',[...extraLanguages(store.prefs.appLanguage).map(value=>({value,label:LANGS[value],native:NATIVE[value]})),{value:'off',label:'Off'}],store.prefs.lang,value=>applyPrefs({lang:value})));
-$('#search-form').addEventListener('submit',event=>{event.preventDefault();runLookup();});
-query.addEventListener('input',()=>{state.query=query.value;$('#submit').disabled=!query.value.trim()||state.loading;if(state.focused&&state.tab==='lookup')render();else sync();});
+$('#search-form').addEventListener('submit',event=>{event.preventDefault();if(isSentence()){state.tab='grammar';sentence.submit(store.prefs.appLanguage);sentenceScroll.grammar=sentenceScroll.words=0;content.scrollTop=0;render();}else runLookup();});
+query.addEventListener('input',()=>{if(isSentence()){sentence.edit(query.value);sync();render();return;}state.query=query.value;$('#submit').disabled=!query.value.trim()||state.loading;if(state.focused&&state.tab==='lookup')render();else sync();});
 query.addEventListener('focus',()=>{if(state.tab==='lookup'){state.focused=true;render();}});
 query.addEventListener('blur',()=>{if(!state.focused)return;setTimeout(()=>{if(document.activeElement!==query){state.focused=false;render();}},120);});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&state.focused){blurSearch();render();}});
@@ -439,4 +495,4 @@ if('serviceWorker'in navigator&&['https:','http:'].includes(location.protocol)){
 }
 sync();render();if(store.errors.includes('kalima_saved_v1'))notify("Your saved words couldn't be opened. Restore a backup if needed.");
 // Stable, read-only diagnostics for browser smoke tests and support.
-globalThis.KalimaApp={version:VERSION,get appLanguage(){return store.prefs.appLanguage;},get savedCount(){return store.saved.length;}};
+globalThis.KalimaApp={version:VERSION,get sentenceCount(){return sentenceHistory.items.length;},get appLanguage(){return store.prefs.appLanguage;},get savedCount(){return store.saved.length;}};

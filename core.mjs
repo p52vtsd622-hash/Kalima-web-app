@@ -1,4 +1,4 @@
-export const VERSION = '0.9-web.1';
+export const VERSION = '1.0-web.1';
 export const LANGS = {en:'English',ar:'Arabic',ur:'Urdu',fa:'Farsi',tr:'Turkish',ru:'Russian',fr:'French'};
 export const NATIVE = {en:'English',ar:'العربية',ur:'اردو',fa:'فارسی',tr:'Türkçe',ru:'Русский',fr:'Français'};
 export const RTL = new Set(['ar','ur','fa']);

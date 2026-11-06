@@ -1,3 +1,4 @@
+import {Spring} from './spring.mjs';
 let translate=x=>x;
 export const setTranslator=fn=>{translate=fn;};
 export const reduced=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -31,15 +32,25 @@ export function section(title,children,key,states,onOpen,initiallyExpanded=false
   if(!states.has(key))states.set(key,initiallyExpanded);
   const details=el('details',{open:states.get(key)||false});
   const summary=el('summary',{},el('span',{text:title}),el('span',{class:'chevron'},icon('chevron')));
-  const body=el('div',{class:'section-body'},children);details.append(summary,body);
-  let animation=null,loaded=false;
-  const load=()=>{if(!loaded&&onOpen){loaded=true;onOpen(body);}};
+  const inner=el('div',{class:'section-inner'},children),body=el('div',{class:'section-body'},inner);details.append(summary,body);
+  let loaded=false,targetOpen=details.open;
+  const spring=new Spring(0,height=>{body.style.height=Math.max(0,height)+'px';});
+  const load=()=>{if(!loaded&&onOpen){loaded=true;onOpen(inner);}};
   if(details.open)queueMicrotask(load);
+  const height=()=>inner.getBoundingClientRect().height;
+  const observer=new ResizeObserver(()=>{if(targetOpen&&spring.frame)spring.to(height(),()=>{body.style.height='auto';body.style.overflow='';});});
+  observer.observe(inner); // Retarget if async section content arrives mid-expansion.
   summary.addEventListener('click',event=>{
-    event.preventDefault();animation?.cancel();
-    if(!details.open){details.open=true;states.set(key,true);load();if(!reduced())animation=body.animate([{height:'0px',opacity:0},{height:body.scrollHeight+'px',opacity:1}],{duration:220,easing:'cubic-bezier(.2,.8,.2,1)'});}
-    else {states.set(key,false);if(reduced()){details.open=false;return;}animation=body.animate([{height:body.scrollHeight+'px',opacity:1},{height:'0px',opacity:0}],{duration:180,easing:'ease-in'});animation.onfinish=()=>{details.open=false;};}
+    event.preventDefault();
+    const current=details.open?body.getBoundingClientRect().height:0;
+    if(!spring.frame)spring.set(current);
+    targetOpen=!targetOpen;states.set(key,targetOpen);
+    summary.setAttribute('aria-expanded',String(targetOpen));
+    if(targetOpen){details.open=true;load();}
+    body.style.overflow='hidden';
+    spring.to(targetOpen?height():0,()=>{details.open=targetOpen;body.style.height='auto';body.style.overflow='';});
   });
+  summary.setAttribute('aria-expanded',String(targetOpen));
   return details;
 }
 export function loading(label) {return el('section',{class:'card section-feedback'},row(el('span',{class:'spinner','aria-hidden':'true'}),el('p',{role:'status',text:label})),el('div',{class:'skeleton','aria-hidden':'true'},[1,2,3,4].map(()=>el('i'))));}
@@ -55,20 +66,28 @@ export function openSheet(title,body,onClose=()=>{},options={}) {
   document.querySelector('#sheet-body').replaceChildren(...(Array.isArray(body)?body:[body]).filter(Boolean));
   document.querySelector('#sheet-close').textContent=translate('Close');
   const previous=document.activeElement;let closing=false,timer,afterClose=null,finished=false;
+  const centered=!!options.centered;
+  const motion=new Spring(centered?0:panel.getBoundingClientRect().height||400,y=>{panel.style.transform=centered?'translate(-50%,-50%)':`translate(-50%,${y}px)`;},{stiffness:420,damping:38});
   if(!history.state?.modal)history.pushState({...history.state,modal:true},'');
-  const finish=(consume=true)=>{if(finished)return;clearTimeout(timer);if(consume&&history.state?.modal){history.back();return;}finished=true;if(!closing){closing=true;onClose();}dialog.close();dialog.classList.remove('closing');panel.style.removeProperty('transform');previous?.isConnected&&previous.focus({preventScroll:true});if(afterClose)queueMicrotask(afterClose);};
+  const finish=(consume=true)=>{if(finished)return;clearTimeout(timer);if(consume&&history.state?.modal){history.back();return;}finished=true;motion.cancel();if(!closing){closing=true;onClose();}dialog.close();dialog.classList.remove('closing');panel.style.removeProperty('transform');previous?.isConnected&&previous.focus({preventScroll:true});if(afterClose)queueMicrotask(afterClose);};
   closeImmediate=()=>finish(false);
-  closer=action=>{if(typeof action==='function')afterClose=action;if(closing)return;closing=true;onClose();dialog.classList.add('closing');timer=setTimeout(()=>finish(),reduced()?0:190);};
+  closer=action=>{if(typeof action==='function')afterClose=action;if(closing)return;closing=true;onClose();dialog.classList.add('closing');motion.to(centered?0:panel.getBoundingClientRect().height+24,()=>finish());};
   document.querySelector('#sheet-close').onclick=closer;
   dialog.oncancel=event=>{event.preventDefault();closer();};
   dialog.onclick=event=>{if(event.target===dialog)closer();};
   let start=null;
   const grabber=dialog.querySelector('.grabber');
-  grabber.onpointerdown=e=>{start=e.clientY;grabber.setPointerCapture(e.pointerId);};
-  grabber.onpointermove=e=>{if(start!==null)panel.style.transform=`translate(-50%,${Math.max(0,e.clientY-start)}px)`;};
-  grabber.onpointerup=e=>{if(start!==null&&e.clientY-start>75)closer();else panel.style.removeProperty('transform');start=null;};
-  grabber.onpointercancel=()=>{start=null;panel.style.removeProperty('transform');};
-  dialog.showModal();dialog.scrollTop=0;
+  grabber.onpointerdown=e=>{if(centered||closing)return;start={y:e.clientY,offset:motion.x,last:e.clientY,time:e.timeStamp,v:0};motion.cancel();grabber.setPointerCapture(e.pointerId);};
+  grabber.onpointermove=e=>{if(!start)return;const dt=(e.timeStamp-start.time)/1000;start.v=dt>0?Math.max(-1600,Math.min(1600,(e.clientY-start.last)/dt)):0;start.last=e.clientY;start.time=e.timeStamp;motion.set(Math.max(0,start.offset+e.clientY-start.y));};
+  grabber.onpointerup=e=>{if(!start)return;motion.v=start.v;const dismiss=(motion.x>75&&start.v>=-250)||start.v>700;start=null;if(dismiss)closer();else motion.to(0);};
+  grabber.onpointercancel=()=>{start=null;motion.to(0);};
+  // Preserve native scrolling until a downward drag begins at the sheet's top.
+  let touch=null;
+  panel.ontouchstart=e=>{if(centered||closing||e.touches.length!==1||e.target.closest('button,input,textarea,select,.grabber'))return;const t=e.touches[0];touch={x:t.clientX,y:t.clientY,last:t.clientY,time:e.timeStamp,v:0,offset:motion.x,dragging:false};};
+  panel.ontouchmove=e=>{if(!touch||e.touches.length!==1)return;const t=e.touches[0],dy=t.clientY-touch.y;if(!touch.dragging){if(panel.scrollTop>0||dy<0||Math.abs(t.clientX-touch.x)>Math.abs(dy)){touch=null;return;}if(dy<8)return;touch.dragging=true;motion.cancel();}if(e.cancelable)e.preventDefault();const dt=(e.timeStamp-touch.time)/1000;touch.v=dt>0?Math.max(-1600,Math.min(1600,(t.clientY-touch.last)/dt)):0;touch.last=t.clientY;touch.time=e.timeStamp;motion.set(Math.max(0,touch.offset+dy));};
+  panel.ontouchend=()=>{if(!touch)return;const t=touch;touch=null;if(!t.dragging)return;motion.v=t.v;if((motion.x>75&&t.v>=-250)||t.v>700)closer();else motion.to(0);};
+  panel.ontouchcancel=()=>{if(touch?.dragging)motion.to(0);touch=null;};
+  dialog.showModal();dialog.scrollTop=0;motion.set(centered?0:panel.getBoundingClientRect().height+24);motion.to(0);
   return {close:()=>closer?.(),finish};
 }
 export const closeSheet=action=>closer?.(action);
