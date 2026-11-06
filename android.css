@@ -1,7 +1,7 @@
 /* Android 0.9 Compose dimensions and palette, expressed in CSS px/rem. */
-@font-face{font-family:Instrument;src:url(instrument_sans_medium.ttf);font-weight:500;font-display:swap}
-@font-face{font-family:Vazirmatn;src:url(vazirmatn_medium.ttf);font-weight:500 800;font-display:swap}
-@font-face{font-family:Nastaliq;src:url(noto_nastaliq_urdu_semibold.ttf);font-weight:600 800;font-display:swap}
+@font-face{font-family:Instrument;src:url(fonts/instrument_sans_medium.ttf);font-weight:500;font-display:swap}
+@font-face{font-family:Vazirmatn;src:url(fonts/vazirmatn_medium.ttf);font-weight:500 800;font-display:swap}
+@font-face{font-family:Nastaliq;src:url(fonts/noto_nastaliq_urdu_semibold.ttf);font-weight:600 800;font-display:swap}
 :root{font-size:16px;--surface:#fff;--field:#fff;--muted:#6A7A71;--line:#DEDAD1;--soft-line:#EBE7DF;--primary:#335C41;--fill:#4A835C;--on-fill:#fff;--soft:#DCE5DE;--input:#F8F6F0;--nav-ink:#1D231F;--suggest:#E3EDE5;--suggest-ink:#225134;--active-ink:#1D231F}
 :root[data-theme=dark]{--surface:#1B1D1C;--field:#252726;--ink:#E0E2E0;--muted:#828683;--line:#2D302E;--soft-line:#222423;--primary:#8AB89B;--fill:#4A835C;--on-fill:#fff;--soft:#1F3226;--input:#2A2D2B;--nav-ink:#E0E2E0;--suggest:#0D1C12;--suggest-ink:#65AF80;--active-ink:#fff}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}body{font-size:1rem}button{border-radius:999px;font-size:.875rem;font-weight:500;padding:10px 24px;line-height:1.4}button:disabled{opacity:.55}
